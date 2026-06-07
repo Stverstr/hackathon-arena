@@ -1255,11 +1255,12 @@ function setEEActive(active){
   requireJury(async()=>{
     if(!active && !confirm('Easter eggs resetten? Alle gevonden eggs en toegekende punten worden gewist.')) return;
     try {
-      await fetch(`${FN}/set-ee-active`, {
+      const res = await fetch(`${FN}/set-ee-active`, {
         method:'POST',
         headers:{'Content-Type':'application/json','X-Session-ID':session?.session_id||''},
         body: JSON.stringify({active})
       });
+      if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Fout bij opslaan'); }
       toast(active ? '▶️ Easter eggs gestart!' : '🔄 Easter eggs gereset!');
       await loadState();
     } catch(e){ toast('❌ '+e.message); }
