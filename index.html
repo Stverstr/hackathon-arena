@@ -169,6 +169,27 @@ select:focus{border-color:var(--teal);outline:none;}
 .bonus-hist-row .bh-left{display:flex;flex-direction:column;gap:2px;}
 .bonus-hist-row .bh-pts{font-weight:800;font-size:.9rem;}
 .bh-pos{color:#007a50;}.bh-neg{color:#c02020;}
+/* puntenhistoriek */
+.pt-breakdown-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.pt-team-row{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);}
+.pt-stripe{width:6px;border-radius:3px;align-self:stretch;flex-shrink:0;}
+.pt-team-name{font-size:.85rem;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pt-pills{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.pt-pill{display:inline-flex;align-items:center;gap:3px;font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:99px;white-space:nowrap;}
+.pt-pill.ch{background:rgba(0,194,209,.12);color:#007080;}
+.pt-pill.eg{background:rgba(0,217,168,.14);color:#006644;}
+.pt-pill.bo{background:rgba(130,80,255,.10);color:#5530a0;}
+.pt-pill.ee{background:rgba(255,180,0,.14);color:#a06000;}
+.pt-pill.tot{background:var(--navy);color:#fff;font-size:.75rem;font-weight:800;padding:4px 10px;}
+.pt-feed{display:flex;flex-direction:column;gap:6px;}
+.pt-event{background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 13px;display:flex;align-items:center;gap:10px;box-shadow:var(--sh);}
+.pt-event .pte-stripe{width:5px;border-radius:3px;align-self:stretch;flex-shrink:0;min-height:28px;}
+.pt-event .pte-icon{font-size:1rem;flex-shrink:0;}
+.pt-event .pte-body{flex:1;min-width:0;}
+.pt-event .pte-team{font-size:.72rem;font-weight:700;color:var(--text2);}
+.pt-event .pte-desc{font-size:.8rem;font-weight:500;color:var(--navy);}
+.pt-event .pte-pts{font-size:.9rem;font-weight:800;flex-shrink:0;text-align:right;}
+.pt-event .pte-time{font-size:.66rem;color:var(--text2);flex-shrink:0;text-align:right;min-width:40px;}
 
 /* easter egg awards */
 .ee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px;margin-bottom:10px;}
@@ -338,11 +359,11 @@ select:focus{border-color:var(--teal);outline:none;}
     <div id="eeFoundBar" style="text-align:center;margin-bottom:12px;"></div>
     <div id="lbList"><div class="loading-msg">Scorebord laden…</div></div>
     <div class="divider"></div>
-    <div class="sec-title" id="histTitle"><span>📜</span> Geschiedenis</div>
-    <div class="hist" id="histScore"></div>
-    <div class="divider"></div>
-    <div class="sec-title"><span>🎖️</span> Jurybonussen</div>
-    <div id="bonusHistScore"></div>
+    <div class="sec-title" id="histTitle"><span>📊</span> Puntenoverzicht per team</div>
+    <div id="ptBreakdown"></div>
+    <div class="divider" style="margin:20px 0 14px;"></div>
+    <div class="sec-title" style="margin-bottom:12px;"><span>📜</span> Volledige historiek</div>
+    <div id="ptFeed"></div>
   </div>
 </div>
 
@@ -929,24 +950,80 @@ function renderLeaderboard(){
   document.getElementById('histTitle')?.addEventListener('click',()=>trackClick('hist',3,14),{once:true});
 }
 
+function fmtTime(iso){
+  if(!iso)return'';
+  const d=new Date(iso);
+  return d.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'});
+}
+
 function renderHistory(){
-  // Challenge history
-  const hs=document.getElementById('histScore');
-  if(hs){
-    hs.innerHTML=S.challengeHist.length?S.challengeHist.map(h=>`
-      <div class="hist-row">
-        <div class="hl"><span class="hw">🏆 ${h.winner}</span><span>${h.team1} vs ${h.team2}</span></div>
-        <span class="hch">${h.challenge_name}</span>
-      </div>`).join(''):'<p style="color:var(--text2);text-align:center;padding:16px;font-size:.82rem">Nog geen uitdagingen gespeeld.</p>';
+  const teamColor=name=>(S.teams.find(t=>t.name===name)||{color:'#aaa'}).color;
+
+  // ── Per-team breakdown ─────────────────────────────────────────
+  const bd=document.getElementById('ptBreakdown');
+  if(bd){
+    const ranked=[...S.teams].sort((a,b)=>totalPts(b)-totalPts(a));
+    if(!ranked.length){bd.innerHTML='<p style="color:var(--text2);font-size:.82rem;text-align:center;padding:12px">Nog geen teams.</p>';}
+    else{
+      bd.innerHTML=`<div class="pt-breakdown-grid">${ranked.map(t=>{
+        const chPts=S.challengeHist.filter(h=>h.winner===t.name).length*3;
+        const egPts=S.eggs[t.name]?.alive?6:0;
+        const boPts=S.bonusHist.filter(h=>h.team===t.name).reduce((s,h)=>s+h.points,0);
+        const eePts=Object.values(S.easterEggs).filter(e=>e.awarded_to===t.name).length;
+        const tot=totalPts(t);
+        return `<div class="pt-team-row">
+          <div class="pt-stripe" style="background:${t.color}"></div>
+          <div class="pt-team-name">${t.name}</div>
+          <div class="pt-pills">
+            ${chPts?`<span class="pt-pill ch">⚔️ ${chPts} pt</span>`:''}
+            ${egPts?`<span class="pt-pill eg">🥚 +6 pt</span>`:''}
+            ${boPts?`<span class="pt-pill bo">${boPts>0?'+':''}${boPts} pt jury</span>`:''}
+            ${eePts?`<span class="pt-pill ee">🐣 +${eePts} pt</span>`:''}
+            <span class="pt-pill tot">${tot} pt</span>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    }
   }
-  // Bonus history (scorebord)
-  const bs=document.getElementById('bonusHistScore');
-  if(bs){
-    bs.innerHTML=S.bonusHist.length?S.bonusHist.map(h=>`
-      <div class="bonus-hist-row">
-        <div class="bh-left"><span class="${h.points>=0?'bh-pos bh-pts':'bh-neg bh-pts'}">${h.points>=0?'+':''}${h.points} pt</span><span>${h.team}</span>${h.comment?`<span style="color:var(--text2)">${h.comment}</span>`:''}</div>
-      </div>`).join(''):'<p style="color:var(--text2);font-size:.78rem">Geen bonussen.</p>';
+
+  // ── Unified chronological feed ──────────────────────────────────
+  const feed=document.getElementById('ptFeed');
+  if(!feed)return;
+  const events=[];
+
+  S.challengeHist.forEach(h=>{
+    events.push({ts:h.created_at,team:h.winner,color:teamColor(h.winner),icon:'⚔️',
+      desc:`Won van ${h.winner===h.team1?h.team2:h.team1} — ${h.challenge_name}`,pts:+3});
+  });
+  S.bonusHist.forEach(h=>{
+    events.push({ts:h.created_at,team:h.team,color:teamColor(h.team),icon:h.points>=0?'🎖️':'⚠️',
+      desc:h.comment||'Jurybeslissing',pts:h.points});
+  });
+  Object.entries(S.easterEggs).forEach(([idx,ee])=>{
+    if(ee.awarded_to){
+      events.push({ts:ee.found_at||null,team:ee.awarded_to,color:teamColor(ee.awarded_to),
+        icon:'🐣',desc:`Easter egg #${parseInt(idx)+1} gevonden`,pts:+1});
+    }
+  });
+
+  events.sort((a,b)=>new Date(b.ts||0)-new Date(a.ts||0));
+
+  if(!events.length){
+    feed.innerHTML='<p style="color:var(--text2);text-align:center;padding:16px;font-size:.82rem">Nog geen puntgebeurtenissen.</p>';
+    return;
   }
+  feed.innerHTML=`<div class="pt-feed">${events.map(ev=>`
+    <div class="pt-event">
+      <div class="pte-stripe" style="background:${ev.color}"></div>
+      <div class="pte-icon">${ev.icon}</div>
+      <div class="pte-body">
+        <div class="pte-team">${ev.team}</div>
+        <div class="pte-desc">${ev.desc}</div>
+      </div>
+      <div class="pte-pts" style="color:${ev.pts>=0?'#007a50':'#c02020'}">${ev.pts>0?'+':''}${ev.pts} pt</div>
+      <div class="pte-time">${fmtTime(ev.ts)}</div>
+    </div>`).join('')}
+  </div>`;
 }
 
 function renderWheelTeams(){
