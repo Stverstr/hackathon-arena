@@ -186,12 +186,17 @@ select:focus{border-color:var(--teal);outline:none;}
 .ee-hint-btn:hover{background:rgba(0,194,209,.12);}
 .ee-hint{font-size:.74rem;color:var(--navy);line-height:1.5;background:rgba(255,214,0,.12);border:1px solid rgba(255,180,0,.3);border-radius:7px;padding:7px 9px;margin-bottom:2px;}
 
-/* jury secrets */
-.secrets-toggle{width:100%;padding:11px;background:linear-gradient(135deg,#8b0057,#c0206f);border:none;border-radius:10px;color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;margin-bottom:12px;}
-.secrets-list{display:none;flex-direction:column;gap:8px;}
-.secrets-list.open{display:flex;}
-.secret-item{background:linear-gradient(135deg,rgba(139,0,87,.07),rgba(192,32,111,.05));border:1px solid rgba(139,0,87,.15);border-radius:10px;padding:12px 14px;}
-.secret-item .si-n{font-size:.68rem;color:#8b0057;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+/* jury secrets — Kitty */
+.secret-item{background:linear-gradient(135deg,rgba(139,0,87,.07),rgba(192,32,111,.05));border:1px solid rgba(139,0,87,.18);border-radius:12px;padding:14px 16px;animation:fadeUp .4s;}
+.secret-item .si-icon{font-size:1.6rem;margin-bottom:6px;}
+.secret-item .si-n{font-size:.68rem;color:#8b0057;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;}
+.secret-item p{font-size:.83rem;color:var(--navy);line-height:1.65;font-style:italic;}
+/* hidden hearts */
+.kitty-heart{font-size:.65rem;opacity:.04;cursor:pointer;transition:opacity .3s,transform .3s;user-select:none;display:inline-block;margin-left:4px;vertical-align:middle;}
+.kitty-heart:hover{opacity:.45;transform:scale(1.4);}
+.kitty-heart.unlocked{opacity:.18;animation:hbeat 2.2s ease-in-out infinite;}
+.kitty-heart.found{display:none;}
+@keyframes hbeat{0%,100%{transform:scale(1);}40%{transform:scale(1.3);}60%{transform:scale(1.1);}}
 .secret-item p{font-size:.82rem;color:var(--text);line-height:1.5;}
 
 /* challenges (jury only) */
@@ -395,7 +400,7 @@ select:focus{border-color:var(--teal);outline:none;}
 
     <!-- Teams -->
     <div class="admin-card">
-      <h3>👥 Teams</h3>
+      <h3>👥 Teams<span class="kitty-heart" data-secret="0">🤍</span></h3>
       <div class="team-rows" id="adminTeams"></div>
       <div class="add-row" id="addTeamRow" style="display:none">
         <input type="text" id="newName" placeholder="Teamnaam..." maxlength="24">
@@ -407,14 +412,14 @@ select:focus{border-color:var(--teal);outline:none;}
 
     <!-- Egg tracker -->
     <div class="admin-card">
-      <h3>🥚 Ei-tracker <span id="eggEeHint" style="font-size:.72rem;font-weight:400;color:var(--text2);cursor:pointer"></span></h3>
+      <h3>🥚 Ei-tracker<span class="kitty-heart" data-secret="1">🤍</span> <span id="eggEeHint" style="font-size:.72rem;font-weight:400;color:var(--text2);cursor:pointer"></span></h3>
       <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Personaliseer elk ei en houd bij of het nog leeft. Een levend ei = +6 pts.</p>
       <div class="egg-grid" id="eggGrid"></div>
     </div>
 
     <!-- Jury bonus/straf -->
     <div class="admin-card">
-      <h3>🎖️ Bonus / straf punten</h3>
+      <h3>🎖️ Bonus / straf punten<span class="kitty-heart" data-secret="2">🤍</span></h3>
       <div id="bonusSection">
         <div class="bonus-row">
           <select id="bonusTeam"><option value="">Team…</option></select>
@@ -429,27 +434,38 @@ select:focus{border-color:var(--teal);outline:none;}
 
     <!-- Easter egg awards -->
     <div class="admin-card">
-      <h3>🐣 Easter egg beloningen</h3>
+      <h3>🐣 Easter egg beloningen<span class="kitty-heart" data-secret="3">🤍</span></h3>
       <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Als een team een Easter egg meldt, duid hier aan welk team +1 punt krijgt.</p>
       <div class="ee-grid" id="eeGrid"></div>
     </div>
 
     <!-- Spelletjes (jury only) -->
     <div class="admin-card" id="chListCard" style="display:none">
-      <h3>🎯 Spelletjeslijst <span style="font-size:.72rem;font-weight:500;color:var(--text2)">(enkel jury)</span></h3>
+      <h3>🎯 Spelletjeslijst<span class="kitty-heart" data-secret="4">🤍</span> <span style="font-size:.72rem;font-weight:500;color:var(--text2)">(enkel jury)</span></h3>
       <div class="ch-grid" id="chList"></div>
     </div>
 
-    <!-- Jury secrets -->
+    <!-- Jury secrets — Kitty only -->
     <div class="admin-card" id="secretsCard" style="display:none">
-      <h3>💋 Jury Geheimen <span style="font-size:.72rem;font-weight:500;color:var(--text2)">(enkel jury)</span></h3>
-      <button class="secrets-toggle" id="secretsToggle">💋 Toon Jury Geheimen</button>
-      <div class="secrets-list" id="secretsList"></div>
+      <h3>💋 Persoonlijke Geheimen<span class="kitty-heart" data-secret="7">🤍</span></h3>
+      <div id="secretsLock">
+        <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Er zijn 10 verborgen boodschappen verstopt op deze pagina. Vul het geheime wachtwoord in om de hartjes te ontsluiten.<span class="kitty-heart" data-secret="8">🤍</span></p>
+        <div style="display:flex;gap:8px;">
+          <input type="password" id="secretsPwd" class="bonus-pts-input" style="flex:1;font-size:.9rem;letter-spacing:1px;" placeholder="Geheim wachtwoord…">
+          <button class="bonus-btn" onclick="checkSecretsPassword()">🔓</button>
+        </div>
+        <div id="secretsPwdErr" style="font-size:.75rem;color:#c02020;margin-top:6px;display:none;">Verkeerd wachtwoord. Probeer opnieuw. 💔</div>
+      </div>
+      <div id="secretsUnlocked" style="display:none">
+        <div style="font-size:.8rem;color:#8b0057;font-weight:600;margin-bottom:4px;line-height:1.5;">🌸 De hartjes zijn nu zichtbaar op deze pagina.<span class="kitty-heart" data-secret="9">🤍</span><br><span style="font-weight:400;color:var(--text2);">Zoek ze en klik ze aan om de boodschappen te lezen.</span></div>
+        <div id="secretsFoundCounter" style="font-size:.72rem;color:#8b0057;margin:10px 0 14px;font-weight:600;"></div>
+        <div id="secretsFoundList" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
     </div>
 
     <!-- Uitdagingslog + Reset -->
     <div class="admin-card">
-      <h3>📜 Uitdagingslog</h3>
+      <h3>📜 Uitdagingslog<span class="kitty-heart" data-secret="5">🤍</span></h3>
       <div class="hist" id="histAdmin"></div>
       <div id="resetSection" style="display:none">
         <button class="danger-btn" id="resetBtn">🗑️ Alles resetten (onomkeerbaar!)</button>
@@ -458,7 +474,7 @@ select:focus{border-color:var(--teal);outline:none;}
 
     <!-- Spelbeheer -->
     <div class="admin-card" id="spelbeheerCard" style="display:none">
-      <h3>💾 Spelbeheer</h3>
+      <h3>💾 Spelbeheer<span class="kitty-heart" data-secret="6">🤍</span></h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
         <button class="bonus-btn" id="saveGameBtn">💾 Huidig spel opslaan</button>
         <button class="bonus-btn" style="background:linear-gradient(135deg,var(--mint),var(--teal));" id="newGameBtn">🆕 Nieuw spel starten</button>
@@ -1095,17 +1111,89 @@ function renderChallengeList(){
     </div>`).join('');
 }
 
-// Jury secrets
-document.getElementById('secretsToggle').addEventListener('click',()=>{
-  requireJury(async()=>{
-    const list=document.getElementById('secretsList');
-    if(list.classList.contains('open')){list.classList.remove('open');return;}
-    if(list.innerHTML){list.classList.add('open');return;}
-    try{
-      const {data}=await juryAction('get-secrets');
-      list.innerHTML=data.map(s=>`<div class="secret-item"><div class="si-n">${s.name}</div><p>${s.message}</p></div>`).join('');
-      list.classList.add('open');
-    }catch(e){toast('❌ '+e.message);}
+// ── KITTY'S GEHEIMEN ──────────────────────────────────────────────
+const KITTY_SECRETS = [
+  {icon:'💘', title:'Bumble',
+   msg:'Je had mijn beste vriend ook gematcht op Bumble. Hij verloor — ik won. Ik weet niet wie er meer blij was. Ik weet alleen dat jij de juiste keuze maakte.'},
+  {icon:'🌅', title:'Eerste date',
+   msg:'We wandelden samen voor de wereld wakker was. Daarna bleven we naar de sterren kijken alsof we ergens naartoe moesten. We hoefden nergens naartoe.'},
+  {icon:'🏠', title:'Thuis',
+   msg:'Ik nodigde mezelf misschien iets te enthousiast uit bij jou thuis. Maar jij liet me elke keer toch binnen. Dat zegt eigenlijk alles.'},
+  {icon:'🌙', title:'4de date',
+   msg:'De vierde keer dat we elkaar zagen, lieten we alle voorzichtigheid varen. Sommige dingen hoef je niet te plannen — ze gebeuren gewoon goed.'},
+  {icon:'🚿', title:'Valkenburg',
+   msg:'Een weekendje Valkenburg. Een douche die te goed was om alleen te gebruiken. Een sauna die dat bevestigde. Jij maakte van een gewoon weekend iets wat ik nooit vergeet.'},
+  {icon:'🎰', title:'Casino',
+   msg:'We verlieten het casino met meer geld dan we binnengingen. Maar de echte jackpot had ik al voor we aan de speeltafels zaten.'},
+  {icon:'🚡', title:'Stoeltjeslift',
+   msg:'Hand in hand op een stoeltjeslift, boven alles uit. De wereld lag beneden ons — maar ik had alleen oog voor jou.'},
+  {icon:'🏰', title:'Kasteel',
+   msg:'We bezochten een kasteel. Jij paste er volledig in. Want jij bent altijd al de koningin van dit verhaal geweest.'},
+  {icon:'💃', title:'Dansen',
+   msg:'We dansten tot diep in de nacht. De wereld mocht wachten. Ik wilde nergens anders zijn dan daar, met jou, bewegend op muziek.'},
+  {icon:'🎻', title:'Belofte',
+   msg:'We stelen warmte uit elk vrij momentje. Vraag van de dag. Biertje aan de toog. Exclusief zijn — na een héél debat. Je weet het nog niet, maar ik ga je ooit een strijkorkest cadeau doen. Dit is mijn belofte.'},
+];
+const SECRETS_PWD = 'EverybodylovesStijn';
+let secretsUnlocked = false;
+
+function getFoundSecrets(){return JSON.parse(localStorage.getItem('ha_kitty_found')||'[]');}
+function markSecretFound(idx){
+  const f=getFoundSecrets();if(!f.includes(idx)){f.push(idx);localStorage.setItem('ha_kitty_found',JSON.stringify(f));}
+}
+
+function checkSecretsPassword(){
+  const v=document.getElementById('secretsPwd').value;
+  if(v===SECRETS_PWD){
+    secretsUnlocked=true;
+    document.getElementById('secretsLock').style.display='none';
+    document.getElementById('secretsUnlocked').style.display='block';
+    document.querySelectorAll('.kitty-heart').forEach(h=>h.classList.add('unlocked'));
+    renderFoundSecrets();
+    toast('🌸 Hartjes ontgrendeld! Zoek ze op de pagina.');
+  } else {
+    document.getElementById('secretsPwdErr').style.display='block';
+    document.getElementById('secretsPwd').value='';
+  }
+}
+
+function renderFoundSecrets(){
+  const found=getFoundSecrets();
+  const counter=document.getElementById('secretsFoundCounter');
+  const list=document.getElementById('secretsFoundList');
+  if(counter)counter.textContent=`${found.length} / ${KITTY_SECRETS.length} boodschappen gevonden`;
+  if(!list)return;
+  list.innerHTML=found.sort((a,b)=>a-b).map(i=>{
+    const s=KITTY_SECRETS[i];
+    return `<div class="secret-item"><div class="si-icon">${s.icon}</div><div class="si-n">${s.title}</div><p>${s.msg}</p></div>`;
+  }).join('');
+}
+
+function revealSecret(idx){
+  if(!secretsUnlocked){toast('🔒 Vul eerst het wachtwoord in bij Persoonlijke Geheimen.');return;}
+  markSecretFound(idx);
+  const heart=document.querySelector(`.kitty-heart[data-secret="${idx}"]`);
+  if(heart)heart.classList.add('found');
+  renderFoundSecrets();
+  const s=KITTY_SECRETS[idx];
+  // Show popup
+  document.getElementById('eeBig').textContent=s.icon;
+  document.getElementById('eeTitle').textContent=s.title;
+  document.getElementById('eeMsg').textContent=s.msg;
+  document.getElementById('eeOverlay').classList.add('open');
+}
+
+// Attach heart click listeners (after DOM ready)
+document.querySelectorAll('.kitty-heart').forEach(h=>{
+  h.addEventListener('click',e=>{e.stopPropagation();revealSecret(parseInt(h.dataset.secret));});
+});
+
+// Restore found state on load
+window.addEventListener('load',()=>{
+  const found=getFoundSecrets();
+  found.forEach(i=>{
+    const h=document.querySelector(`.kitty-heart[data-secret="${i}"]`);
+    if(h)h.classList.add('found');
   });
 });
 
