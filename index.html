@@ -1325,9 +1325,9 @@ function renderChallengeList(){
     </div>`).join('');
 }
 
-// ── KITTY'S GEHEIMEN (content in DB, niet in HTML) ────────────────
-const SECRETS_PWD = 'EverybodylovesStijn'; // wachtwoord mag in HTML
+// ── KITTY'S GEHEIMEN (content in DB, wachtwoord nergens in HTML) ──
 let secretsUnlocked = false;
+let _secretPwd = null; // tijdelijk in geheugen, nooit in broncode
 
 function getFoundSecrets(){return JSON.parse(localStorage.getItem('ha_kitty_found')||'[]');}
 function saveFoundSecret(idx, name, message){
@@ -1335,23 +1335,29 @@ function saveFoundSecret(idx, name, message){
   if(!f.find(s=>s.idx===idx)){f.push({idx,name,message});localStorage.setItem('ha_kitty_found',JSON.stringify(f));}
 }
 
-function checkSecretsPassword(){
-  const v=document.getElementById('secretsPwd').value;
-  if(v===SECRETS_PWD){
+async function checkSecretsPassword(){
+  const v=document.getElementById('secretsPwd').value.trim();
+  if(!v) return;
+  // Verifieer wachtwoord server-side door een geheim op te halen (idx=0)
+  // Wachtwoord staat NIET in de HTML — enkel de server kent het
+  try {
+    const r=await fetch(`${FN}/get-secret-content?idx=0`,{headers:{'X-Secret-Password':v}});
+    if(!r.ok) throw new Error('wrong');
+    _secretPwd = v; // bewaar in geheugen (verdwijnt bij page refresh)
     secretsUnlocked=true;
     document.getElementById('secretsLock').style.display='none';
     document.getElementById('secretsUnlocked').style.display='block';
     document.querySelectorAll('.kitty-heart').forEach(h=>h.classList.add('unlocked'));
-    // Restore already-found hearts as hidden
     getFoundSecrets().forEach(s=>{
       const h=document.querySelector(`.kitty-heart[data-secret="${s.idx}"]`);
       if(h)h.classList.add('found');
     });
     renderFoundSecrets();
     toast('🌸 Hartjes ontgrendeld! Zoek ze op de pagina.');
-  } else {
+  } catch {
     document.getElementById('secretsPwdErr').style.display='block';
     document.getElementById('secretsPwd').value='';
+    _secretPwd = null;
   }
 }
 
@@ -1401,7 +1407,7 @@ async function revealSecret(idx){
   document.getElementById('eeOverlay').classList.add('open');
   try{
     const r=await fetch(`${FN}/get-secret-content?idx=${idx}`,{
-      headers:{'X-Secret-Password':SECRETS_PWD}
+      headers:{'X-Secret-Password':_secretPwd||''}
     });
     if(!r.ok)throw new Error('niet gevonden');
     const s=await r.json();
