@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>HRlinkIT · Hackathon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f2f5ff;--bg2:#ffffff;--bg3:#e8edf8;
+  --teal:#00c2d1;--mint:#00d9a8;--navy:#1a2160;
+  --blue:#0082c0;--soft:#eaf6f8;
+  --text:#1a2160;--text2:#7080a0;
+  --border:rgba(26,33,96,0.09);--r:14px;
+  --sh:0 2px 16px rgba(26,33,96,0.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Lexend',system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:#fff;border-bottom:2px solid var(--teal);display:flex;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;box-shadow:0 2px 12px rgba(0,194,209,.10);}
+nav::-webkit-scrollbar{display:none;}
+.nav-logo{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:0 16px;font-size:.95rem;font-weight:800;color:var(--navy);white-space:nowrap;cursor:pointer;user-select:none;}
+.nav-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Lexend',sans-serif;color:var(--text2);padding:0 15px;font-size:.85rem;white-space:nowrap;font-weight:500;border-bottom:3px solid transparent;transition:all .2s;height:50px;}
+.nav-btn.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:700;}
+.nav-btn:hover{color:var(--navy);}
+.nav-status{flex-shrink:0;display:flex;align-items:center;padding:0 12px;margin-left:auto;font-size:.73rem;font-weight:700;color:var(--text2);cursor:pointer;white-space:nowrap;gap:5px;}
+.nav-status.logged-in{color:#007a50;}
+
+/* ── TABS ── */
+.tab{display:none;}.tab.active{display:block;}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:48px 20px 32px;background:linear-gradient(160deg,rgba(0,194,209,.06) 0%,rgba(0,217,168,.06) 100%);}
+.hero h1{font-size:clamp(1.8rem,6vw,3.2rem);font-weight:800;line-height:1.15;margin-bottom:12px;background:linear-gradient(120deg,var(--navy),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;}
+.hero p{font-size:clamp(.9rem,2.5vw,1.05rem);color:var(--text2);max-width:500px;margin:0 auto 24px;line-height:1.65;font-weight:400;cursor:pointer;}
+.live-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(0,217,168,.12);border:1px solid rgba(0,217,168,.3);color:var(--mint);padding:5px 16px;border-radius:99px;font-size:.78rem;font-weight:700;letter-spacing:.8px;cursor:pointer;}
+.dot{width:7px;height:7px;background:var(--mint);border-radius:50%;animation:blink 1.2s infinite;cursor:pointer;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 56px;}
+.sec-title{font-size:clamp(1rem,3vw,1.35rem);font-weight:700;margin:28px 0 16px;display:flex;align-items:center;gap:8px;color:var(--navy);}
+.divider{height:1px;background:var(--border);margin:24px 0;}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--sh);}
+
+/* ── RULES ── */
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.rule-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;box-shadow:var(--sh);}
+.rule-card .bg-n{position:absolute;top:4px;right:12px;font-size:2.5rem;font-weight:900;opacity:.05;color:var(--navy);}
+.rule-card .ic{font-size:1.6rem;margin-bottom:8px;}
+.rule-card h3{font-size:.9rem;font-weight:700;color:var(--teal);margin-bottom:5px;}
+.rule-card p{font-size:.81rem;color:var(--text2);line-height:1.6;}
+
+/* ── SCORE TABLE ── */
+.stab{width:100%;border-collapse:collapse;}
+.stab th,.stab td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:.85rem;}
+.stab th{color:var(--text2);font-size:.7rem;text-transform:uppercase;letter-spacing:1px;font-weight:600;}
+.stab td:last-child{text-align:right;}
+.badge{display:inline-block;font-weight:700;padding:3px 10px;border-radius:99px;font-size:.78rem;}
+.badge.g{background:rgba(0,217,168,.14);color:#009970;}
+.badge.r{background:rgba(220,50,50,.10);color:#c02020;}
+.badge.b{background:rgba(0,130,192,.12);color:var(--blue);}
+
+/* ── LEADERBOARD ── */
+.lb-wrap{max-width:740px;margin:0 auto;padding:0 16px 56px;}
+.lb-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh);position:relative;}
+.lb-card.r1{border-color:rgba(255,200,0,.4);background:linear-gradient(90deg,rgba(255,215,0,.05),#fff);}
+.lb-card.r2{border-color:rgba(180,180,180,.4);}
+.lb-card.r3{border-color:rgba(180,120,50,.3);}
+.lb-medal{font-size:1.4rem;flex-shrink:0;min-width:30px;text-align:center;cursor:pointer;}
+.lb-stripe{width:8px;border-radius:4px;align-self:stretch;flex-shrink:0;}
+.lb-info{flex:1;min-width:0;}
+.lb-name{font-size:1rem;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-sub{display:flex;gap:10px;flex-wrap:wrap;}
+.lb-sub span{font-size:.7rem;color:var(--text2);}
+.lb-sub span strong{color:var(--text);}
+.lb-bar-bg{height:4px;background:var(--bg3);border-radius:99px;margin-top:7px;overflow:hidden;}
+.lb-bar{height:100%;border-radius:99px;transition:width .6s;}
+.lb-pts{font-size:1.6rem;font-weight:800;flex-shrink:0;text-align:right;min-width:46px;cursor:pointer;}
+.egg-status{font-size:.72rem;padding:2px 8px;border-radius:99px;font-weight:600;margin-left:6px;}
+.egg-alive{background:rgba(0,217,168,.14);color:#009970;}
+.egg-dead{background:rgba(220,50,50,.12);color:#c02020;}
+
+/* ── WHEEL ── */
+.wheel-page{max-width:940px;margin:0 auto;padding:0 16px 56px;}
+.wheel-layout{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start;}
+.wheel-col{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.pointer{width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:26px solid var(--navy);cursor:pointer;}
+#wCanvas{border-radius:50%;box-shadow:0 4px 32px rgba(0,194,209,.2);display:block;}
+.spin-btn{width:100%;background:linear-gradient(135deg,var(--teal),var(--mint));border:none;border-radius:12px;color:#fff;font-size:.95rem;font-weight:700;padding:13px;cursor:pointer;font-family:'Lexend',sans-serif;transition:transform .15s,box-shadow .15s;}
+.spin-btn:hover{box-shadow:0 4px 20px rgba(0,194,209,.35);}
+.spin-btn:active{transform:scale(.97);}
+.spin-btn:disabled{opacity:.5;cursor:not-allowed;}
+
+.form-col{}
+.result-box{background:linear-gradient(135deg,var(--soft),rgba(0,217,168,.06));border:1px solid rgba(0,194,209,.25);border-radius:var(--r);padding:16px;margin-bottom:12px;display:none;animation:fadeUp .3s;}
+.result-box .em{font-size:2.2rem;margin-bottom:6px;}
+.result-box h4{font-size:1rem;font-weight:700;margin-bottom:4px;color:var(--navy);}
+.result-box p{font-size:.82rem;color:var(--text2);line-height:1.55;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.form-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh);}
+.form-card h3{font-size:.92rem;font-weight:700;color:var(--teal);margin-bottom:14px;}
+.fl{font-size:.7rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+select{width:100%;background:#fff;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.88rem;padding:10px 12px;margin-bottom:12px;outline:none;-webkit-appearance:none;appearance:none;font-family:'Lexend',sans-serif;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath fill='%237080a0' d='M5 7L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;transition:border-color .2s;}
+select:focus{border-color:var(--teal);outline:none;}
+.msg{display:none;border-radius:10px;padding:9px 13px;margin-bottom:12px;font-size:.8rem;line-height:1.5;}
+.msg.ok{background:rgba(0,217,168,.10);border:1px solid rgba(0,217,168,.25);color:#007a50;}
+.msg.err{background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.2);color:#c02020;}
+.win-btns{display:flex;gap:8px;flex-wrap:wrap;}
+.win-btn{flex:1;min-width:120px;padding:12px 8px;border-radius:10px;border:1px solid rgba(0,217,168,.3);font-size:.84rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;background:rgba(0,217,168,.12);color:#007a50;transition:background .15s;}
+.win-btn:hover{background:rgba(0,217,168,.22);}
+
+.override-box{background:rgba(255,180,0,.06);border:1px solid rgba(255,180,0,.25);border-radius:var(--r);padding:16px;margin-bottom:12px;display:none;animation:fadeUp .3s;}
+.override-box h4{font-size:.88rem;font-weight:700;color:#a06000;margin-bottom:4px;}
+.override-box p{font-size:.76rem;color:var(--text2);margin-bottom:10px;}
+.override-box .dig{font-size:.78rem;background:var(--bg3);border-radius:8px;padding:6px 10px;margin-bottom:10px;color:var(--text2);}
+.confirm-btn{width:100%;padding:11px;background:linear-gradient(135deg,#f0a000,#e06000);border:none;border-radius:10px;color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;}
+
+/* ── ADMIN ── */
+.admin-wrap{max-width:740px;margin:0 auto;padding:0 16px 56px;}
+.admin-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:16px;box-shadow:var(--sh);}
+.admin-card h3{font-size:.92rem;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.team-rows{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.team-row{background:var(--bg3);border-radius:10px;padding:9px 13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.dot2{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.tn{flex:1;font-weight:600;font-size:.88rem;min-width:80px;}
+.tp{font-size:.76rem;color:var(--text2);}
+.rm-btn{background:rgba(220,50,50,.10);border:1px solid rgba(220,50,50,.2);color:#c02020;padding:4px 10px;border-radius:7px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;}
+.add-row{display:flex;gap:8px;flex-wrap:wrap;}
+.add-row input[type=text]{flex:1;min-width:130px;background:#fff;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.88rem;padding:9px 12px;outline:none;font-family:'Lexend',sans-serif;}
+.add-row input[type=text]:focus{border-color:var(--teal);}
+.add-row input[type=color]{width:40px;height:40px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;padding:2px;flex-shrink:0;}
+.add-btn{background:linear-gradient(135deg,var(--teal),var(--mint));border:none;border-radius:10px;color:#fff;font-weight:700;padding:9px 16px;cursor:pointer;font-size:.88rem;white-space:nowrap;font-family:'Lexend',sans-serif;}
+.hist{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.hist-row{background:var(--bg3);border-radius:10px;padding:9px 13px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;}
+.hist-row .hl{display:flex;flex-direction:column;gap:2px;font-size:.79rem;}
+.hw{color:#007a50;font-weight:700;font-size:.79rem;}
+.hch{color:#a06000;font-style:italic;font-size:.74rem;}
+.ht{color:var(--text2);font-size:.69rem;}
+.danger-btn{background:rgba(220,50,50,.08);border:1px solid rgba(220,50,50,.2);color:#c02020;padding:10px;border-radius:10px;font-size:.84rem;font-weight:700;cursor:pointer;width:100%;margin-top:6px;font-family:'Lexend',sans-serif;}
+
+/* egg tracker */
+.egg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:12px;}
+.egg-card{background:var(--bg3);border-radius:10px;padding:12px 14px;border:2px solid transparent;}
+.egg-card.alive{border-color:rgba(0,217,168,.3);}
+.egg-card.dead{border-color:rgba(220,50,50,.25);opacity:.75;}
+.egg-card .egg-team{font-size:.82rem;font-weight:700;margin-bottom:4px;}
+.egg-card .egg-nm{font-size:.72rem;color:var(--text2);margin-bottom:8px;font-style:italic;}
+.egg-card .egg-actions{display:flex;gap:5px;flex-wrap:wrap;}
+.egg-btn{padding:4px 8px;border-radius:7px;font-size:.72rem;font-weight:700;cursor:pointer;border:none;font-family:'Lexend',sans-serif;}
+.egg-btn.break{background:rgba(220,50,50,.12);color:#c02020;}
+.egg-btn.restore{background:rgba(0,217,168,.12);color:#007a50;}
+.egg-name-input{width:100%;background:#fff;border:1px solid var(--border);border-radius:7px;font-size:.78rem;padding:5px 8px;margin-bottom:6px;font-family:'Lexend',sans-serif;color:var(--text);}
+.egg-name-input:focus{outline:none;border-color:var(--teal);}
+
+/* bonus points */
+.bonus-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.bonus-row select{margin-bottom:0;flex:1;min-width:120px;}
+.bonus-pts-input{width:80px;background:#fff;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.88rem;padding:10px;font-family:'Lexend',sans-serif;text-align:center;flex-shrink:0;}
+.bonus-pts-input:focus{outline:none;border-color:var(--teal);}
+.comment-input{width:100%;background:#fff;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.85rem;padding:9px 12px;margin-bottom:8px;font-family:'Lexend',sans-serif;}
+.comment-input:focus{outline:none;border-color:var(--teal);}
+.bonus-btn{background:linear-gradient(135deg,var(--navy),var(--blue));border:none;border-radius:10px;color:#fff;font-weight:700;padding:9px 18px;cursor:pointer;font-size:.85rem;font-family:'Lexend',sans-serif;white-space:nowrap;}
+.bonus-hist-row{background:var(--bg3);border-radius:10px;padding:8px 12px;font-size:.78rem;display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:5px;}
+.bonus-hist-row .bh-left{display:flex;flex-direction:column;gap:2px;}
+.bonus-hist-row .bh-pts{font-weight:800;font-size:.9rem;}
+.bh-pos{color:#007a50;}.bh-neg{color:#c02020;}
+
+/* easter egg awards */
+.ee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px;margin-bottom:10px;}
+.ee-item{background:var(--bg3);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.ee-item.found{background:rgba(0,217,168,.08);border:1px solid rgba(0,217,168,.25);}
+.ee-item.awarded{opacity:.6;}
+.ee-item .ee-n{font-size:.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+.ee-item .ee-lbl{font-size:.75rem;color:var(--text);line-height:1.4;}
+.ee-award-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.ee-award-row select{margin-bottom:0;flex:1;min-width:100px;font-size:.78rem;padding:5px 8px;}
+.ee-award-btn{padding:5px 10px;border-radius:7px;background:rgba(0,217,168,.15);color:#007a50;border:1px solid rgba(0,217,168,.3);font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;}
+.ee-found-badge{font-size:.7rem;color:#007a50;font-weight:700;}
+.ee-awarded-badge{font-size:.7rem;color:var(--text2);}
+
+/* jury secrets */
+.secrets-toggle{width:100%;padding:11px;background:linear-gradient(135deg,#8b0057,#c0206f);border:none;border-radius:10px;color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;margin-bottom:12px;}
+.secrets-list{display:none;flex-direction:column;gap:8px;}
+.secrets-list.open{display:flex;}
+.secret-item{background:linear-gradient(135deg,rgba(139,0,87,.07),rgba(192,32,111,.05));border:1px solid rgba(139,0,87,.15);border-radius:10px;padding:12px 14px;}
+.secret-item .si-n{font-size:.68rem;color:#8b0057;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+.secret-item p{font-size:.82rem;color:var(--text);line-height:1.5;}
+
+/* challenges (jury only) */
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:9px;}
+.ch-card{background:var(--bg3);border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:9px;}
+.ch-num{flex-shrink:0;width:22px;height:22px;border-radius:6px;background:rgba(0,194,209,.15);color:var(--teal);font-size:.66rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.ch-em{font-size:1.4rem;flex-shrink:0;line-height:1;}
+.ch-body h4{font-size:.84rem;font-weight:700;margin-bottom:2px;}
+.ch-body p{font-size:.74rem;color:var(--text2);line-height:1.5;}
+
+/* ── LOGIN OVERLAY ── */
+#loginOverlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(26,33,96,0.55);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;}
+#loginOverlay.open{display:flex;}
+#loginBox{background:#fff;border:1px solid rgba(0,194,209,.2);border-radius:var(--r);padding:28px 24px;max-width:340px;width:100%;text-align:center;animation:fadeUp .25s;box-shadow:0 8px 40px rgba(26,33,96,.18);}
+#loginBox .lock-icon{font-size:2.4rem;margin-bottom:8px;}
+#loginBox h2{font-size:.98rem;font-weight:800;margin-bottom:5px;color:var(--navy);}
+#loginBox p{font-size:.8rem;color:var(--text2);margin-bottom:16px;line-height:1.5;}
+.login-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.9rem;padding:11px 14px;outline:none;margin-bottom:9px;font-family:'Lexend',sans-serif;transition:border-color .2s;}
+.login-input:focus{border-color:var(--teal);}
+#loginErr{color:#c02020;font-size:.76rem;margin-bottom:10px;min-height:16px;}
+.pw-btns{display:flex;gap:8px;}
+#loginCancel{flex:1;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Lexend',sans-serif;}
+#loginConfirm{flex:1;padding:10px;background:linear-gradient(135deg,var(--teal),var(--mint));border:none;border-radius:10px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;}
+
+/* ── EASTER EGG POPUP ── */
+#eeOverlay{display:none;position:fixed;inset:0;z-index:700;background:rgba(26,33,96,0.50);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;}
+#eeOverlay.open{display:flex;}
+#eeBox{background:#fff;border:2px solid var(--mint);border-radius:var(--r);padding:28px 24px;max-width:340px;width:100%;text-align:center;animation:pop .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 40px rgba(0,217,168,.25);}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+#eeBox .ee-big{font-size:3rem;margin-bottom:8px;}
+#eeBox h2{font-size:.95rem;font-weight:800;color:var(--teal);margin-bottom:10px;}
+#eeBox p{font-size:.88rem;color:var(--text);line-height:1.6;margin-bottom:16px;}
+#eeBox button{padding:10px 24px;background:linear-gradient(135deg,var(--teal),var(--mint));border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;font-size:.9rem;}
+#eeBox .ee-loading{font-size:1.2rem;color:var(--text2);padding:20px 0;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:-100px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid rgba(0,217,168,.4);box-shadow:0 4px 24px rgba(0,194,209,.2);border-radius:var(--r);padding:12px 22px;font-size:.9rem;font-weight:700;color:#007a50;transition:bottom .4s;z-index:1000;text-align:center;max-width:88vw;}
+#toast.show{bottom:24px;}
+#confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
+
+/* ── LOADING STATE ── */
+.loading-msg{text-align:center;padding:40px;color:var(--text2);font-size:.9rem;}
+.btn-pri{background:linear-gradient(135deg,var(--teal),var(--mint));border:none;border-radius:10px;color:#fff;font-weight:700;padding:9px 18px;cursor:pointer;font-size:.85rem;font-family:'Lexend',sans-serif;}
+.btn-sec{background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-weight:600;padding:9px 18px;cursor:pointer;font-size:.85rem;font-family:'Lexend',sans-serif;}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  .nav-logo{padding:0 10px;font-size:.82rem;}
+  .nav-btn{padding:0 11px;font-size:.79rem;height:44px;}
+  .wheel-layout{grid-template-columns:1fr;}
+  .wheel-col{order:2;}
+  .form-col{order:1;}
+  .rules-grid{grid-template-columns:1fr;}
+  .stab td:first-child{font-size:.78rem;}
+}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div id="toast"></div>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay">
+  <div id="loginBox">
+    <div class="lock-icon">🔐</div>
+    <h2>Jury Login</h2>
+    <p>Log in als jury om acties uit te voeren.</p>
+    <input class="login-input" type="text" id="loginUser" placeholder="Gebruikersnaam" autocomplete="username">
+    <input class="login-input" type="password" id="loginPwd" placeholder="Wachtwoord" autocomplete="current-password">
+    <div id="loginErr"></div>
+    <div class="pw-btns">
+      <button id="loginCancel">Annuleren</button>
+      <button id="loginConfirm">Inloggen ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- EASTER EGG POPUP -->
+<div id="eeOverlay">
+  <div id="eeBox">
+    <div class="ee-big" id="eeBig">🥚</div>
+    <h2 id="eeTitle">Easter egg gevonden!</h2>
+    <p id="eeMsg">Even laden…</p>
+    <button id="eeClose">Super! Meld aan de jury 🎉</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" id="navLogo">
+    <svg width="20" height="20" viewBox="0 0 100 100"><defs><linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00c2d1"/><stop offset="100%" stop-color="#00d9a8"/></linearGradient></defs><circle cx="50" cy="50" r="47" fill="url(#lg)"/><ellipse cx="50" cy="50" rx="20" ry="36" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="6" transform="rotate(-35 50 50)"/><ellipse cx="50" cy="50" rx="20" ry="36" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="6" transform="rotate(35 50 50)"/><ellipse cx="50" cy="50" rx="20" ry="36" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="5"/></svg>
+    HRlinkIT · Hackathon
+  </div>
+  <button class="nav-btn active" data-tab="concept">🏠 Info</button>
+  <button class="nav-btn" data-tab="scorebord">🏆 Scorebord</button>
+  <button class="nav-btn" data-tab="wheel">🎡 Rad</button>
+  <button class="nav-btn" data-tab="beheer">⚙️ Jury</button>
+  <div class="nav-status" id="navStatus" onclick="navStatusClick()">🔒 Jury</div>
+</nav>
+
+<!-- INFO TAB -->
+<div class="tab active" id="tab-concept">
+  <div class="hero">
+    <div class="live-pill" id="livePill"><div class="dot" id="liveDot"></div> LIVE</div>
+    <h1 id="heroTitle" style="margin-top:18px">HRlinkIT Challenge Arena</h1>
+    <p id="heroSub">Vandaag coderen jullie niet alleen — teams dagen elkaar uit in snelle mini-spelletjes. Wie eindigt bovenaan?</p>
+  </div>
+  <div class="wrap">
+    <div class="sec-title"><span>📖</span> Spelregels</div>
+    <div class="rules-grid">
+      <div class="rule-card"><div class="bg-n">1</div><div class="ic">⚔️</div><h3>Uitdagen</h3><p>Je mag een team uitdagen dat <strong>max. 2 plaatsen</strong> boven of onder jou staat op het scorebord.</p></div>
+      <div class="rule-card"><div class="bg-n">2</div><div class="ic">🎡</div><h3>Rad van Fortuin</h3><p>De jury draait het rad — het lot kiest het spelletje. Geen excuses achteraf!</p></div>
+      <div class="rule-card"><div class="bg-n">3</div><div class="ic">👨‍⚖️</div><h3>Jury beslist</h3><p>Beide teams doen het spelletje live. De jury bepaalt wie wint.</p></div>
+      <div class="rule-card"><div class="bg-n">4</div><div class="ic">🏅</div><h3>Punten</h3><p>Winnen = <strong>+3 punten</strong>. Verliezen = 0. Elk team kan <strong>max. 10 uitdagingen</strong> starten.</p></div>
+      <div class="rule-card"><div class="bg-n">5</div><div class="ic">🥚</div><h3>Het Ei</h3><p>Elk team krijgt een ei. Houd het in leven = <strong>+6 punten</strong>. Je mag andermans ei stukmaken. Personaliseer je ei!</p></div>
+      <div class="rule-card"><div class="bg-n">6</div><div class="ic">🐣</div><h3>Easter Eggs</h3><p>Er zijn <strong>20 verborgen Easter eggs</strong> in deze app. Eerste vinder = <strong>+1 punt</strong>. Meld het aan de jury!</p></div>
+    </div>
+    <div class="divider"></div>
+    <div class="sec-title"><span>💡</span> Puntenoverzicht</div>
+    <table class="stab">
+      <thead><tr><th>Actie</th><th>Punten</th></tr></thead>
+      <tbody>
+        <tr><td>✅ Uitdaging winnen</td><td><span class="badge g">+3 pts</span></td></tr>
+        <tr><td>❌ Uitdaging verliezen</td><td><span class="badge r">+0 pts</span></td></tr>
+        <tr><td>🥚 Ei levend houden (eindstand)</td><td><span class="badge g">+6 pts</span></td></tr>
+        <tr><td>🐣 Easter egg als eerste vinden</td><td><span class="badge g">+1 pt</span></td></tr>
+        <tr><td>😴 Uitdaging weigeren</td><td><span class="badge r">–1 pt straf</span></td></tr>
+        <tr><td>🎖️ Jury bonus/straf</td><td><span class="badge b">variabel</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SCOREBORD TAB -->
+<div class="tab" id="tab-scorebord">
+  <div class="lb-wrap">
+    <div class="sec-title" style="justify-content:center;padding-top:20px;" id="lbTitle">🏆 Scorebord</div>
+    <div id="lbList"><div class="loading-msg">Scorebord laden…</div></div>
+    <div class="divider"></div>
+    <div class="sec-title" id="histTitle"><span>📜</span> Geschiedenis</div>
+    <div class="hist" id="histScore"></div>
+    <div class="divider"></div>
+    <div class="sec-title"><span>🎖️</span> Jurybonussen</div>
+    <div id="bonusHistScore"></div>
+  </div>
+</div>
+
+<!-- RAD TAB -->
+<div class="tab" id="tab-wheel">
+  <div class="wheel-page">
+    <div class="sec-title" style="justify-content:center;padding-top:20px;">🎡 Rad van Fortuin</div>
+    <div class="wheel-layout">
+      <div class="form-col">
+        <div class="result-box" id="resultBox">
+          <div class="em" id="rEmoji"></div>
+          <h4 id="rName"></h4>
+          <p id="rTeams" style="font-weight:600;color:var(--navy);margin-bottom:4px;"></p>
+        </div>
+        <div class="override-box" id="overrideBox">
+          <h4>🎡 Overschrijf met fysiek rad</h4>
+          <p>Selecteer wat het fysieke rad aanwees. Bevestigen vereist jury-inlog.</p>
+          <div class="dig" id="digResult"></div>
+          <div class="fl">Werkelijke opdracht</div>
+          <select id="overrideSel"></select>
+          <button class="confirm-btn" id="confirmChallengeBtn">🔐 Bevestig opdracht</button>
+        </div>
+        <div id="winnerSection" style="display:none">
+          <div class="form-card">
+            <h3 id="winnerTitle">⚔️ Wie wint?</h3>
+            <div class="win-btns" id="winBtns"></div>
+          </div>
+        </div>
+        <div class="form-card">
+          <h3>⚔️ Uitdagingsformulier</h3>
+          <div class="fl">Uitdagend team</div>
+          <select id="sel1"><option value="">— Selecteer team —</option></select>
+          <div class="fl">Uitgedaagd team</div>
+          <select id="sel2"><option value="">— Selecteer team —</option></select>
+          <div class="msg ok" id="msgOk"></div>
+          <div class="msg err" id="msgErr"></div>
+          <button class="spin-btn" id="spinBtn">🎲 Draaien! (jury)</button>
+        </div>
+      </div>
+      <div class="wheel-col">
+        <div class="pointer" id="wheelPointer"></div>
+        <canvas id="wCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JURY TAB -->
+<div class="tab" id="tab-beheer">
+  <div class="admin-wrap">
+    <div class="sec-title" style="padding-top:20px;"><span>⚙️</span> Jurybeheer</div>
+
+    <!-- Login status -->
+    <div id="adminLoginStatus"></div>
+
+    <!-- Teams -->
+    <div class="admin-card">
+      <h3>👥 Teams</h3>
+      <div class="team-rows" id="adminTeams"></div>
+      <div class="add-row" id="addTeamRow" style="display:none">
+        <input type="text" id="newName" placeholder="Teamnaam..." maxlength="24">
+        <input type="color" id="newColor" value="#00c2d1">
+        <button class="add-btn" id="addBtn">+ Team</button>
+      </div>
+      <p id="teamLockMsg" style="font-size:.78rem;color:var(--text2);">🔒 Log in als jury om teams te beheren.</p>
+    </div>
+
+    <!-- Egg tracker -->
+    <div class="admin-card">
+      <h3>🥚 Ei-tracker <span id="eggEeHint" style="font-size:.72rem;font-weight:400;color:var(--text2);cursor:pointer"></span></h3>
+      <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Personaliseer elk ei en houd bij of het nog leeft. Een levend ei = +6 pts.</p>
+      <div class="egg-grid" id="eggGrid"></div>
+    </div>
+
+    <!-- Jury bonus/straf -->
+    <div class="admin-card">
+      <h3>🎖️ Bonus / straf punten</h3>
+      <div id="bonusSection">
+        <div class="bonus-row">
+          <select id="bonusTeam"><option value="">Team…</option></select>
+          <input type="number" id="bonusPts" class="bonus-pts-input" placeholder="±pts" step="1">
+        </div>
+        <input type="text" id="bonusComment" class="comment-input" placeholder="Reden / commentaar voor het team…">
+        <button class="bonus-btn" id="bonusBtn">✓ Toekennen</button>
+      </div>
+      <div style="margin-top:12px;font-size:.76rem;color:var(--text2);margin-bottom:8px;font-weight:600;">Geschiedenis</div>
+      <div id="bonusHistAdmin"></div>
+    </div>
+
+    <!-- Easter egg awards -->
+    <div class="admin-card">
+      <h3>🐣 Easter egg beloningen</h3>
+      <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Als een team een Easter egg meldt, duid hier aan welk team +1 punt krijgt.</p>
+      <div class="ee-grid" id="eeGrid"></div>
+    </div>
+
+    <!-- Spelletjes (jury only) -->
+    <div class="admin-card" id="chListCard" style="display:none">
+      <h3>🎯 Spelletjeslijst <span style="font-size:.72rem;font-weight:500;color:var(--text2)">(enkel jury)</span></h3>
+      <div class="ch-grid" id="chList"></div>
+    </div>
+
+    <!-- Jury secrets -->
+    <div class="admin-card" id="secretsCard" style="display:none">
+      <h3>💋 Jury Geheimen <span style="font-size:.72rem;font-weight:500;color:var(--text2)">(enkel jury)</span></h3>
+      <button class="secrets-toggle" id="secretsToggle">💋 Toon Jury Geheimen</button>
+      <div class="secrets-list" id="secretsList"></div>
+    </div>
+
+    <!-- Uitdagingslog + Reset -->
+    <div class="admin-card">
+      <h3>📜 Uitdagingslog</h3>
+      <div class="hist" id="histAdmin"></div>
+      <div id="resetSection" style="display:none">
+        <button class="danger-btn" id="resetBtn">🗑️ Alles resetten (onomkeerbaar!)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+'use strict';
+// ── CONFIG ────────────────────────────────────────────────────────
+const SB_URL  = 'https://uvodxrrxsxnjlinqrjlw.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV2b2R4cnJ4c3huamxpbnFyamx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1Mjg4MzYsImV4cCI6MjA5NTEwNDgzNn0.1lX4o9zuV0VZJG7S53rdqfbRuic6YnT7g-YPnePavnI';
+const FN      = SB_URL + '/functions/v1';
+const sb      = supabase.createClient(SB_URL, SB_KEY);
+
+// ── GAME DATA ─────────────────────────────────────────────────────
+const CHS = [
+  {e:"🍬",n:"Marshmallows",d:"Wie kan de meeste large marshmallows tegelijk in zijn mond stoppen? Kauwen verboden."},
+  {e:"🥚",n:"Eiwit stijfkloppen",d:"Met de hand klop je een eiwit stijf. Jury controleert door de kom boven het hoofd te houden."},
+  {e:"🏓",n:"Beerpong zonder bier",d:"10 minuten lang zo veel mogelijk ballen in de bekers gooien. Meeste punten wint."},
+  {e:"⚡",n:"Spelletje Zenuwen",d:"Beweeg de lus over de draad zonder de draad aan te raken. Wie de minste 'bzzzt' heeft, wint."},
+  {e:"🃏",n:"Kaartenhuisje",d:"Wie bouwt het hoogste kaartenhuisje in 2 minuten? Jury meet de hoogte na het signaal."},
+  {e:"🍬",n:"Smarties sorteren",d:"Zo snel mogelijk een doosje smarties sorteren op kleur. Snelste met correct resultaat wint."},
+  {e:"🍬",n:"Smarties rietje",d:"Verplaats smarties van punt A naar B met alleen een rietje. Meeste in 60 sec wint."},
+  {e:"🏓",n:"Pingpong palletje",d:"Zo lang mogelijk een pingpongbal hoog houden met een palletje. Wie het langst houdt wint."},
+  {e:"🐍",n:"Snake marathon",d:"Op een telefoon de langste snake spelen in één poging. Langste slang wint."},
+  {e:"🌀",n:"Baldoolhof",d:"Stuur de bal door het doolhof zo snel mogelijk. Jury telt de tijd."},
+  {e:"🏆",n:"Bekerpiramide",d:"Maak een piramide van bekers met 1 hand en ruim ze op met 1 hand. Snelste wint."},
+  {e:"⭕",n:"Hoelahoop",d:"Wie kan het langst een hoelahoop draaiend houden?"},
+  {e:"🍶",n:"Bottle flip x5",d:"Wie slaagt er als eerste in 5 bottle flips op rij?"},
+  {e:"🃏",n:"Uno Express",d:"5 minuten Uno. Wie eerst van al zijn kaarten af is, wint."},
+  {e:"💦",n:"Bekertjes schieten",d:"Schiet bekertjes van de tafel met een waterpistooltje. Meeste omgeschoten in 60 sec wint."},
+  {e:"🧱",n:"Wallsit",d:"Wie houdt het langst een wallsit? Rug tegen muur, benen 90°."},
+  {e:"🎈",n:"Ballon stukmaken",d:"Maak een ballon stuk zonder handen, tanden, schoenen of externe hulpmiddelen."},
+  {e:"🎤",n:"Whitney Houston",d:"Zing zo hoog en lang mogelijk 'And IIIII will always love youuu'. Jury beoordeelt."},
+  {e:"📎",n:"Paperclip ketting",d:"Maak de langste ketting van paperclips in 60 seconden."},
+  {e:"💨",n:"Adem inhouden",d:"Wie kan het langst zijn adem inhouden? Jury telt de seconden."},
+  {e:"🃏",n:"Kaartje blaas",d:"Blaas zoveel mogelijk kaarten van een fles, laat er minstens één liggen."},
+  {e:"🐓",n:"Hanengevecht",d:"Op één been: tegenstander zijn tweede voet op de grond zetten. Drie rondes."},
+  {e:"🔢",n:"Sudoku sprint",d:"Zo snel mogelijk een eenvoudige sudoku oplossen."},
+  {e:"😂",n:"Doe de andere lachen",d:"Doe de tegenstander zo snel mogelijk lachen — geen aanraken. Jury telt seconden."},
+  {e:"🥄",n:"Lepel & Ei",d:"3 rondes met een ei op een lepel door een parcours. Snelste team wint."},
+  {e:"🥢",n:"Chopsticks",d:"Verplaats 10 knikkers van bord A naar B met alleen chopsticks."},
+  {e:"🗼",n:"Jenga Speed",d:"Beurtelings zo snel mogelijk een blokje trekken. Wie de toren doet vallen verliest."},
+  {e:"🗒️",n:"Post-it toren",d:"Stack zoveel mogelijk post-its op je voorhoofd in 1 minuut zonder handen."},
+  {e:"📦",n:"Tetris IRL",d:"Stapel 10 willekeurige voorwerpen zo stabiel en hoog mogelijk in 2 minuten."},
+  {e:"👁️",n:"Blindproeven",d:"Identificeer 3 van 5 mysterieuze voedingsmiddelen met blinddoek."},
+];
+const WHEEL_COLORS=['#00c2d1','#00d9a8','#1a6bd4','#0090d0','#00a8bc','#00c499','#1a8cd0','#00b8d0','#0070b0','#00cc99','#1a5cb0','#00d0b8','#0080c8','#00d490','#1a48a0','#00b4d8','#00e0a8','#0098c8','#1a3a90','#00ccb0'];
+const MEDALS=['🥇','🥈','🥉'];
+
+// ── STATE ─────────────────────────────────────────────────────────
+let S = { teams:[], challengeHist:[], bonusHist:[], eggs:{}, easterEggs:{} };
+let session = null;   // {session_id, username}
+let pendingCb = null;
+let spinning = false, rot = 0;
+let currentCh = {idx:0,c1:'',c2:''};
+const clickCounts = {};
+
+// ── SUPABASE LOAD ─────────────────────────────────────────────────
+async function loadState() {
+  try {
+    const [t, ch, bh, e, ee] = await Promise.all([
+      sb.from('ha_teams').select('*').order('updated_at',{ascending:false}),
+      sb.from('ha_challenge_hist').select('*').order('created_at',{ascending:false}),
+      sb.from('ha_bonus_hist').select('*').order('created_at',{ascending:false}),
+      sb.from('ha_eggs').select('*'),
+      sb.from('ha_easter_eggs').select('*').order('idx')
+    ]);
+    S.teams = t.data || [];
+    S.challengeHist = ch.data || [];
+    S.bonusHist = bh.data || [];
+    S.eggs = {};
+    (e.data||[]).forEach(r => S.eggs[r.team] = {alive:r.alive, name:r.egg_name});
+    S.easterEggs = {};
+    (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to});
+    renderAll();
+  } catch(err) {
+    console.warn('loadState error', err);
+  }
+}
+
+// ── REALTIME ──────────────────────────────────────────────────────
+function setupRealtime() {
+  sb.channel('ha-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_teams'},     ()=>loadState())
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_challenge_hist'}, ()=>loadState())
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_bonus_hist'},()=>loadState())
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_eggs'},      ()=>loadState())
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_easter_eggs'},()=>loadState())
+    .subscribe();
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────
+function requireJury(cb) {
+  if (session) { cb(); return; }
+  pendingCb = cb;
+  openLoginModal();
+}
+
+function openLoginModal() {
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPwd').value='';
+  document.getElementById('loginErr').textContent='';
+  document.getElementById('loginOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('loginUser').focus(),50);
+}
+
+function closeLoginModal() {
+  document.getElementById('loginOverlay').classList.remove('open');
+  pendingCb = null;
+}
+
+async function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPwd').value;
+  if (!u||!p) { document.getElementById('loginErr').textContent='❌ Vul beide velden in.'; return; }
+  const btn = document.getElementById('loginConfirm');
+  btn.disabled=true; btn.textContent='Even wachten…';
+  try {
+    const res = await fetch(`${FN}/jury-login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const data = await res.json();
+    if (!res.ok) { document.getElementById('loginErr').textContent='❌ '+(data.error||'Fout'); return; }
+    session = {session_id:data.session_id, username:data.username};
+    const cb = pendingCb;
+    closeLoginModal();
+    toast(`Welkom ${data.username}! 🔓`);
+    renderAll();
+    if (cb) cb();
+  } catch { document.getElementById('loginErr').textContent='❌ Verbindingsfout.'; }
+  finally { btn.disabled=false; btn.textContent='Inloggen ✓'; }
+}
+
+function logout() {
+  if (!confirm('Uitloggen als jury?')) return;
+  session=null; toast('Uitgelogd. 🔒'); renderAll();
+}
+
+function navStatusClick() {
+  if (session) { logout(); } else { openLoginModal(); }
+}
+
+// ── JURY ACTION ───────────────────────────────────────────────────
+async function juryAction(type, data={}) {
+  if (!session) throw new Error('Niet ingelogd als jury.');
+  const res = await fetch(`${FN}/jury-action`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-Session-ID':session.session_id},
+    body:JSON.stringify({type,...data})
+  });
+  if (res.status===401) { session=null; renderAll(); throw new Error('Sessie verlopen. Log opnieuw in.'); }
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error||'Fout');
+  return result;
+}
+
+// ── EASTER EGGS ───────────────────────────────────────────────────
+const clickCts = {};
+function trackClick(id, threshold, eeIdx) {
+  clickCts[id]=(clickCts[id]||0)+1;
+  if(clickCts[id]>=threshold){clickCts[id]=0;triggerEE(eeIdx);}
+}
+
+async function triggerEE(idx) {
+  // Always show popup — content fetched from server (not in HTML!)
+  document.getElementById('eeBig').textContent='🥚';
+  document.getElementById('eeTitle').textContent='Easter egg gevonden!';
+  document.getElementById('eeMsg').textContent='Even laden…';
+  document.getElementById('eeOverlay').classList.add('open');
+  try {
+    const res = await fetch(`${FN}/get-ee-content?idx=${idx}`);
+    if (!res.ok) throw new Error('niet gevonden');
+    const ee = await res.json();
+    document.getElementById('eeBig').textContent=ee.icon;
+    document.getElementById('eeTitle').textContent=ee.title;
+    document.getElementById('eeMsg').textContent=ee.message;
+    if (idx===19) confetti();
+  } catch { document.getElementById('eeMsg').textContent='🐣 Meld dit aan de jury!'; }
+  // Mark found in DB (non-blocking)
+  fetch(`${FN}/mark-ee-found`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idx})}).catch(()=>{});
+}
+
+// Konami code → EE #16
+let konamiSeq=[];
+const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+document.addEventListener('keydown',e=>{
+  konamiSeq.push(e.key);konamiSeq=konamiSeq.slice(-10);
+  if(JSON.stringify(konamiSeq)===JSON.stringify(KONAMI))triggerEE(15);
+});
+
+// Click triggers for Easter eggs
+document.getElementById('navLogo').addEventListener('click',()=>trackClick('logo',5,0));
+document.getElementById('liveDot').addEventListener('click',()=>trackClick('dot',7,4));
+document.getElementById('livePill').addEventListener('click',()=>trackClick('livepill',5,8));
+document.getElementById('heroTitle').addEventListener('click',()=>trackClick('h1',6,7));
+document.getElementById('heroSub').addEventListener('click',()=>trackClick('hsub',5,5));
+document.getElementById('eggEeHint').addEventListener('click',()=>trackClick('eggHint',5,16));
+
+// Nav buttons (3× each → EE 9-12)
+document.querySelectorAll('.nav-btn').forEach((btn,i)=>{
+  const eeMap=[9,10,11,12];
+  btn.addEventListener('click',()=>trackClick('nav-'+i,3,eeMap[i]));
+});
+
+// ── SCORING ───────────────────────────────────────────────────────
+function totalPts(team) {
+  const egg = S.eggs[team.name]?.alive ? 6 : 0;
+  const bonus = S.bonusHist.filter(h=>h.team===team.name).reduce((s,h)=>s+h.points,0);
+  const ee = Object.values(S.easterEggs).filter(e=>e.awarded_to===team.name).length;
+  return team.points + egg + bonus + ee;
+}
+
+function challengeCount(name) {
+  return S.challengeHist.filter(h=>h.team1===name||h.team2===name).length;
+}
+
+function canChallenge(a,b) {
+  if(a===b) return {ok:false,reason:'Selecteer twee verschillende teams.'};
+  if(challengeCount(a)>=10) return {ok:false,reason:`${a} heeft al 10 uitdagingen gespeeld.`};
+  if(challengeCount(b)>=10) return {ok:false,reason:`${b} heeft al 10 uitdagingen gespeeld.`};
+  const ranked=[...S.teams].sort((x,y)=>totalPts(y)-totalPts(x));
+  const pa=ranked.findIndex(t=>t.name===a), pb=ranked.findIndex(t=>t.name===b);
+  if(Math.abs(pa-pb)>2) return {ok:false,reason:'Teams staan meer dan 2 plaatsen uit elkaar.'};
+  return {ok:true};
+}
+
+// ── WHEEL ─────────────────────────────────────────────────────────
+function resizeCanvas(){
+  const c=document.getElementById('wCanvas');
+  const size=Math.min(window.innerWidth-48,340);
+  c.width=Math.max(size,200);c.height=c.width;
+  drawWheel(rot);
+}
+
+function drawWheel(r){
+  const c=document.getElementById('wCanvas');if(!c||c.width===0)return;
+  const ctx=c.getContext('2d'),cx=c.width/2,cy=cx,radius=cx-6,n=CHS.length;
+  const seg=(2*Math.PI)/n,rr=(r*Math.PI)/180;
+  ctx.clearRect(0,0,c.width,c.height);
+  const fs=Math.max(7,Math.floor(radius/22));
+  for(let i=0;i<n;i++){
+    const s=rr+i*seg-Math.PI/2,e=s+seg;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,radius,s,e);ctx.closePath();
+    ctx.fillStyle=WHEEL_COLORS[i%WHEEL_COLORS.length];ctx.fill();
+    ctx.strokeStyle='rgba(240,244,255,.6)';ctx.lineWidth=1.2;ctx.stroke();
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(s+seg/2);ctx.textAlign='right';
+    ctx.font=`600 ${fs}px 'Lexend',sans-serif`;
+    ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillText(CHS[i].e+' '+CHS[i].n.substring(0,14),radius-6,4);
+    ctx.restore();
+  }
+  ctx.beginPath();ctx.arc(cx,cy,15,0,2*Math.PI);
+  ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle=WHEEL_COLORS[0];ctx.lineWidth=2.5;ctx.stroke();
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font=`${Math.max(9,Math.floor(cx/9))}px sans-serif`;ctx.fillText('⚡',cx,cy);ctx.textBaseline='alphabetic';
+}
+
+document.getElementById('wheelPointer').addEventListener('click',()=>trackClick('ptr',6,1));
+document.getElementById('wCanvas').addEventListener('click',()=>{
+  trackClick('wcv',5,2);
+  trackClick('wcvBig',10,19); // EE #20 at 10 clicks
+});
+
+document.getElementById('spinBtn').addEventListener('click',()=>{
+  if(spinning)return;
+  const c1=document.getElementById('sel1').value,c2=document.getElementById('sel2').value;
+  if(!c1||!c2){showWheelErr('Selecteer eerst beide teams!');return;}
+  const chk=canChallenge(c1,c2);
+  if(!chk.ok){showWheelErr(chk.reason);return;}
+  requireJury(()=>doSpin(c1,c2));
+});
+
+function showWheelErr(msg){
+  const err=document.getElementById('msgErr');
+  err.textContent=msg;err.style.display='block';
+  setTimeout(()=>err.style.display='none',4000);
+}
+
+function doSpin(c1,c2){
+  if(spinning)return;
+  spinning=true;
+  document.getElementById('spinBtn').disabled=true;
+  document.getElementById('resultBox').style.display='none';
+  document.getElementById('overrideBox').style.display='none';
+  document.getElementById('winnerSection').style.display='none';
+  const target=Math.floor(Math.random()*CHS.length);
+  const segDeg=360/CHS.length;
+  const want=((270-(target+0.5)*segDeg)%360+360)%360;
+  const totalRot=rot+(5+Math.random()*3)*360+((want-rot%360+360)%360);
+  const start=performance.now(),dur=4500,startRot=rot;
+  function animate(now){
+    const t=Math.min((now-start)/dur,1);
+    const ease=1-Math.pow(1-t,4);
+    rot=startRot+(totalRot-startRot)*ease;
+    drawWheel(rot);
+    if(t<1){requestAnimationFrame(animate);return;}
+    rot=rot%360;spinning=false;
+    document.getElementById('spinBtn').disabled=false;
+    showResult(target,c1,c2);
+  }
+  requestAnimationFrame(animate);
+}
+
+function showResult(idx,c1,c2){
+  currentCh={idx,c1,c2};
+  const ch=CHS[idx];
+  const rb=document.getElementById('resultBox');
+  rb.style.display='';
+  document.getElementById('rEmoji').textContent=ch.e;
+  document.getElementById('rName').textContent=ch.n;
+  document.getElementById('rTeams').textContent=`${c1} ⚔️ ${c2}`;
+  // Override dropdown
+  const sel=document.getElementById('overrideSel');
+  sel.innerHTML=CHS.map((g,i)=>`<option value="${i}"${i===idx?' selected':''}>${g.e} ${g.n}</option>`).join('');
+  document.getElementById('digResult').textContent=`Digitaal rad: ${ch.e} ${ch.n}`;
+  document.getElementById('overrideBox').style.display='';
+  document.getElementById('winnerSection').style.display='none';
+}
+
+document.getElementById('confirmChallengeBtn').addEventListener('click',()=>{
+  requireJury(()=>{
+    const overrideIdx=parseInt(document.getElementById('overrideSel').value);
+    currentCh.idx=overrideIdx;
+    const ch=CHS[overrideIdx];
+    document.getElementById('rEmoji').textContent=ch.e;
+    document.getElementById('rName').textContent=ch.n;
+    document.getElementById('overrideBox').style.display='none';
+    // Show winner buttons
+    const ws=document.getElementById('winnerSection');
+    const wt=document.getElementById('winnerTitle');
+    const wb=document.getElementById('winBtns');
+    wt.textContent=`⚔️ ${ch.e} ${ch.n} — wie wint?`;
+    wb.innerHTML=`
+      <button class="win-btn" onclick="recordWinner('${currentCh.c1}')">🏆 ${currentCh.c1}</button>
+      <button class="win-btn" onclick="recordWinner('${currentCh.c2}')">🏆 ${currentCh.c2}</button>`;
+    ws.style.display='';
+  });
+});
+
+async function recordWinner(winner) {
+  try {
+    await juryAction('record-challenge',{team1:currentCh.c1,team2:currentCh.c2,winner,challenge_name:CHS[currentCh.idx].n});
+    document.getElementById('resultBox').style.display='none';
+    document.getElementById('overrideBox').style.display='none';
+    document.getElementById('winnerSection').style.display='none';
+    toast(`✅ ${winner} wint de uitdaging!`);
+  } catch(e){ toast('❌ '+e.message); requireJury(()=>recordWinner(winner)); }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────
+function renderAll(){
+  renderNavStatus();
+  renderLeaderboard();
+  renderHistory();
+  renderWheelTeams();
+  renderAdmin();
+}
+
+function renderNavStatus(){
+  const el=document.getElementById('navStatus');
+  if(session){el.textContent='🔓 '+session.username;el.className='nav-status logged-in';}
+  else{el.textContent='🔒 Jury';el.className='nav-status';}
+}
+
+function renderLeaderboard(){
+  const ranked=[...S.teams].sort((a,b)=>totalPts(b)-totalPts(a));
+  const maxPts=ranked.length?Math.max(1,totalPts(ranked[0])):1;
+  const el=document.getElementById('lbList');
+  if(!el)return;
+  if(!ranked.length){el.innerHTML='<div class="loading-msg">Nog geen teams geladen…</div>';return;}
+  el.innerHTML=ranked.map((t,i)=>{
+    const pts=totalPts(t),egg=S.eggs[t.name],bonPts=S.bonusHist.filter(h=>h.team===t.name).reduce((s,h)=>s+h.points,0),eePts=Object.values(S.easterEggs).filter(e=>e.awarded_to===t.name).length;
+    const pct=Math.round(pts/maxPts*100);
+    return `<div class="lb-card${i<3?' r'+(i+1):''}">
+      <div class="lb-medal" data-medal="${i}">${MEDALS[i]||'#'+(i+1)}</div>
+      <div class="lb-stripe" style="background:${t.color}"></div>
+      <div class="lb-info">
+        <div class="lb-name">${t.name}</div>
+        <div class="lb-sub">
+          <span>⚔️ <strong>${challengeCount(t.name)}</strong> uitd.</span>
+          <span>🥚 <strong>${egg?.alive?'Leeft':'Kapot'}</strong></span>
+          ${bonPts!==0?`<span>🎖️ <strong>${bonPts>0?'+':''}${bonPts}</strong></span>`:''}
+          ${eePts>0?`<span>🐣 <strong>×${eePts}</strong></span>`:''}
+        </div>
+        <div class="lb-bar-bg"><div class="lb-bar" style="width:${pct}%;background:${t.color}"></div></div>
+      </div>
+      <div class="lb-pts" data-lbpts="1">${pts}<div style="font-size:.62rem;color:var(--text2);font-weight:500">${t.points}+${egg?.alive?6:0}+${bonPts}+${eePts}</div></div>
+    </div>`;
+  }).join('');
+  // Attach EE click listeners
+  document.querySelectorAll('[data-medal]').forEach((el,i)=>el.addEventListener('click',()=>trackClick('medal-'+i,5,Math.min(i+3,6))));
+  document.querySelectorAll('[data-lbpts]').forEach(el=>el.addEventListener('click',()=>trackClick('lbpts',4,13)));
+  document.getElementById('lbTitle')?.addEventListener('click',()=>trackClick('lbt',4,6),{once:true});
+  document.getElementById('histTitle')?.addEventListener('click',()=>trackClick('hist',3,14),{once:true});
+}
+
+function renderHistory(){
+  // Challenge history
+  const hs=document.getElementById('histScore');
+  if(hs){
+    hs.innerHTML=S.challengeHist.length?S.challengeHist.map(h=>`
+      <div class="hist-row">
+        <div class="hl"><span class="hw">🏆 ${h.winner}</span><span>${h.team1} vs ${h.team2}</span></div>
+        <span class="hch">${h.challenge_name}</span>
+      </div>`).join(''):'<p style="color:var(--text2);text-align:center;padding:16px;font-size:.82rem">Nog geen uitdagingen gespeeld.</p>';
+  }
+  // Bonus history (scorebord)
+  const bs=document.getElementById('bonusHistScore');
+  if(bs){
+    bs.innerHTML=S.bonusHist.length?S.bonusHist.map(h=>`
+      <div class="bonus-hist-row">
+        <div class="bh-left"><span class="${h.points>=0?'bh-pos bh-pts':'bh-neg bh-pts'}">${h.points>=0?'+':''}${h.points} pt</span><span>${h.team}</span>${h.comment?`<span style="color:var(--text2)">${h.comment}</span>`:''}</div>
+      </div>`).join(''):'<p style="color:var(--text2);font-size:.78rem">Geen bonussen.</p>';
+  }
+}
+
+function renderWheelTeams(){
+  const opts=S.teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
+  ['sel1','sel2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=`<option value="">— Selecteer team —</option>${opts}`;});
+}
+
+function renderAdmin(){
+  renderAdminLogin();
+  renderAdminTeams();
+  renderEggAdmin();
+  renderBonusAdmin();
+  renderEEAdmin();
+  renderHistAdmin();
+  // Show jury-only sections
+  const juryOnly=['chListCard','secretsCard','resetSection'];
+  juryOnly.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=session?'':'none';});
+  if(session && !document.getElementById('chList').innerHTML) renderChallengeList();
+}
+
+function renderAdminLogin(){
+  const el=document.getElementById('adminLoginStatus');
+  if(!el)return;
+  if(session){
+    el.innerHTML=`<div class="admin-card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:1.4rem">🔓</div>
+      <div style="flex:1"><div style="font-weight:700">Ingelogd als ${session.username}</div><div style="font-size:.78rem;color:var(--text2)">Jury sessie actief — 12 uur geldig</div></div>
+      <button class="btn-sec" onclick="logout()" style="font-size:.8rem">Uitloggen</button>
+    </div>`;
+  } else {
+    el.innerHTML=`<div class="admin-card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:1.4rem">🔒</div>
+      <div style="flex:1"><div style="font-weight:700">Niet ingelogd</div><div style="font-size:.78rem;color:var(--text2)">Log in als jury voor beheeracties</div></div>
+      <button class="btn-pri" onclick="requireJury(()=>{})" style="font-size:.8rem">Inloggen</button>
+    </div>`;
+  }
+}
+
+function renderAdminTeams(){
+  const el=document.getElementById('adminTeams');const lm=document.getElementById('teamLockMsg');const ar=document.getElementById('addTeamRow');
+  if(lm) lm.style.display=session?'none':'';
+  if(ar) ar.style.display=session?'':'none';
+  if(!el)return;
+  el.innerHTML=S.teams.map(t=>`
+    <div class="team-row">
+      <div class="dot2" style="background:${t.color}"></div>
+      <div class="tn">${t.name}</div>
+      <div class="tp">⚔️ ${challengeCount(t.name)} uitd. · ${totalPts(t)} pts</div>
+      ${session?`<button class="rm-btn" onclick="removeTeam('${t.name}')">×</button>`:''}
+    </div>`).join('');
+}
+
+async function addTeam(){
+  const n=document.getElementById('newName').value.trim();
+  const c=document.getElementById('newColor').value;
+  if(!n){toast('❌ Vul een teamnaam in.');return;}
+  try{await juryAction('add-team',{name:n,color:c});document.getElementById('newName').value='';toast(`✅ ${n} toegevoegd!`);}
+  catch(e){toast('❌ '+e.message);}
+}
+
+async function removeTeam(name){
+  if(!confirm(`Team "${name}" verwijderen?`))return;
+  try{await juryAction('remove-team',{name});toast(`🗑️ ${name} verwijderd.`);}
+  catch(e){toast('❌ '+e.message);}
+}
+
+function renderEggAdmin(){
+  const el=document.getElementById('eggGrid');if(!el)return;
+  const hint=document.getElementById('eggEeHint');if(hint)hint.textContent=''; // will be set below
+  el.innerHTML=S.teams.map(t=>{
+    const egg=S.eggs[t.name]||{alive:true,name:''};
+    return `<div class="egg-card ${egg.alive?'alive':'dead'}">
+      <div class="egg-team">${egg.alive?'🥚':'💔'} ${t.name}</div>
+      <div class="egg-nm">${egg.name||'(geen naam)'}</div>
+      ${session?`<input class="egg-name-input" id="en-${t.name}" value="${egg.name||''}" placeholder="Naam voor het ei…">
+      <div class="egg-actions">
+        ${egg.alive
+          ?`<button class="egg-btn break" onclick="updateEgg('${t.name}',false)">💔 Stuk</button>`
+          :`<button class="egg-btn restore" onclick="updateEgg('${t.name}',true)">🥚 Herstel</button>`}
+        <button class="egg-btn restore" onclick="saveEggName('${t.name}')">💾 Naam</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function updateEgg(team,alive){
+  try{await juryAction('update-egg',{team,alive,egg_name:document.getElementById('en-'+team)?.value||''});toast(alive?`🥚 ${team} ei hersteld!`:`💔 ${team} ei stuk!`);}
+  catch(e){toast('❌ '+e.message);}
+}
+async function saveEggName(team){
+  const name=document.getElementById('en-'+team)?.value||'';
+  try{await juryAction('update-egg',{team,alive:S.eggs[team]?.alive??true,egg_name:name});toast(`💾 Naam opgeslagen!`);}
+  catch(e){toast('❌ '+e.message);}
+}
+
+function renderBonusAdmin(){
+  // Team select
+  const bs=document.getElementById('bonusTeam');if(bs)bs.innerHTML='<option value="">Team…</option>'+S.teams.map(t=>`<option>${t.name}</option>`).join('');
+  // History
+  const bh=document.getElementById('bonusHistAdmin');if(!bh)return;
+  bh.innerHTML=S.bonusHist.length?S.bonusHist.map(h=>`
+    <div class="bonus-hist-row">
+      <div class="bh-left"><span class="${h.points>=0?'bh-pos bh-pts':'bh-neg bh-pts'}">${h.points>=0?'+':''}${h.points} pt</span><span>${h.team}</span>${h.comment?`<span style="color:var(--text2)">${h.comment}</span>`:''}</div>
+    </div>`).join(''):'<p style="font-size:.76rem;color:var(--text2)">Geen bonussen toegekend.</p>';
+}
+
+document.getElementById('bonusBtn').addEventListener('click',()=>{
+  requireJury(async()=>{
+    const team=document.getElementById('bonusTeam').value;
+    const pts=parseInt(document.getElementById('bonusPts').value);
+    const comment=document.getElementById('bonusComment').value.trim();
+    if(!team||isNaN(pts)){toast('❌ Selecteer team en punten.');return;}
+    try{await juryAction('add-bonus',{team,points:pts,comment});document.getElementById('bonusPts').value='';document.getElementById('bonusComment').value='';toast(`✅ ${pts>0?'+':''}${pts} pt voor ${team}!`);}
+    catch(e){toast('❌ '+e.message);}
+  });
+});
+
+function renderEEAdmin(){
+  const el=document.getElementById('eeGrid');if(!el)return;
+  const teamOpts=S.teams.map(t=>`<option value="${t.n||t.name}">${t.n||t.name}</option>`).join('');
+  el.innerHTML=Object.entries(S.easterEggs).sort((a,b)=>a[0]-b[0]).map(([idx,ee])=>`
+    <div class="ee-item${ee.found?' found':''}${ee.awarded_to?' awarded':''}">
+      <div class="ee-n">Easter egg ${parseInt(idx)+1}</div>
+      <div class="ee-lbl">${ee.awarded_to?`✅ Toegekend aan ${ee.awarded_to}`:ee.found?'🔍 Gevonden':'⏳ Nog niet gevonden'}</div>
+      ${ee.found&&!ee.awarded_to&&session?`<div class="ee-award-row"><select id="ee-sel-${idx}">${teamOpts}</select><button class="ee-award-btn" onclick="awardEE(${idx})">+1 pt</button></div>`:''}
+    </div>`).join('');
+}
+
+async function awardEE(idx){
+  const team=document.getElementById(`ee-sel-${idx}`)?.value;
+  if(!team){toast('❌ Selecteer een team.');return;}
+  try{await juryAction('award-ee',{idx:parseInt(idx),team});toast(`🐣 +1 pt voor ${team}!`);}
+  catch(e){toast('❌ '+e.message);}
+}
+
+function renderHistAdmin(){
+  const el=document.getElementById('histAdmin');if(!el)return;
+  el.innerHTML=S.challengeHist.length?S.challengeHist.map(h=>`
+    <div class="hist-row">
+      <div class="hl"><span class="hw">🏆 ${h.winner}</span><span>${h.team1} vs ${h.team2}</span></div>
+      <span class="hch">${h.challenge_name}</span>
+    </div>`).join(''):'<p style="color:var(--text2);font-size:.78rem;padding:8px 0">Nog geen uitdagingen.</p>';
+}
+
+function renderChallengeList(){
+  const el=document.getElementById('chList');if(!el)return;
+  el.innerHTML=CHS.map((c,i)=>`
+    <div class="ch-card">
+      <div class="ch-num">${i+1}</div>
+      <div class="ch-em">${c.e}</div>
+      <div class="ch-body"><h4>${c.n}</h4><p>${c.d}</p></div>
+    </div>`).join('');
+}
+
+// Jury secrets
+document.getElementById('secretsToggle').addEventListener('click',()=>{
+  requireJury(async()=>{
+    const list=document.getElementById('secretsList');
+    if(list.classList.contains('open')){list.classList.remove('open');return;}
+    if(list.innerHTML){list.classList.add('open');return;}
+    try{
+      const {data}=await juryAction('get-secrets');
+      list.innerHTML=data.map(s=>`<div class="secret-item"><div class="si-n">${s.name}</div><p>${s.message}</p></div>`).join('');
+      list.classList.add('open');
+    }catch(e){toast('❌ '+e.message);}
+  });
+});
+
+// Add team button
+document.getElementById('addBtn').addEventListener('click',()=>requireJury(addTeam));
+
+// Reset
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  requireJury(async()=>{
+    if(!confirm('Alle scores en geschiedenis resetten? Dit kan niet ongedaan gemaakt worden!'))return;
+    try{await juryAction('reset-game');toast('🔄 Alles gereset!');}
+    catch(e){toast('❌ '+e.message);}
+  });
+});
+
+// Login modal events
+document.getElementById('loginConfirm').addEventListener('click',doLogin);
+document.getElementById('loginCancel').addEventListener('click',closeLoginModal);
+document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();if(e.key==='Escape')closeLoginModal();});
+document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPwd').focus();if(e.key==='Escape')closeLoginModal();});
+document.getElementById('loginOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('loginOverlay'))closeLoginModal();});
+
+// EE overlay
+document.getElementById('eeClose').addEventListener('click',()=>document.getElementById('eeOverlay').classList.remove('open'));
+document.getElementById('eeOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('eeOverlay'))document.getElementById('eeOverlay').classList.remove('open');});
+
+// Nav tabs
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const tab=btn.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    btn.classList.add('active');
+    if(tab==='wheel')resizeCanvas();
+    window.scrollTo(0,0);
+  });
+});
+
+// ── CONFETTI ──────────────────────────────────────────────────────
+function confetti(){
+  const c=document.getElementById('confetti');c.width=innerWidth;c.height=innerHeight;
+  const ctx=c.getContext('2d');
+  const cols=['#00c2d1','#00d9a8','#1a2160','#ffd700','#0090d0','#fff'];
+  const ps=Array.from({length:90},()=>({x:Math.random()*c.width,y:Math.random()*-c.height,w:6+Math.random()*7,h:3+Math.random()*5,col:cols[Math.floor(Math.random()*cols.length)],rot:Math.random()*360,vx:(Math.random()-.5)*3.5,vy:3+Math.random()*4,vr:(Math.random()-.5)*7}));
+  let f=0;(function draw(){ctx.clearRect(0,0,c.width,c.height);ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.fillStyle=p.col;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});if(++f<100)requestAnimationFrame(draw);else ctx.clearRect(0,0,c.width,c.height);})();
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+window.addEventListener('resize',()=>{if(document.getElementById('tab-wheel').classList.contains('active'))resizeCanvas();});
+loadState().then(()=>{setupRealtime();resizeCanvas();});
+</script>
+</body>
+</html>
