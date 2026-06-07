@@ -588,30 +588,45 @@ const clickCounts = {};
 // Er is geen seq-counter: elke call loopt altijd volledig door.
 let _rtTimer = null;
 
+async function sbFetch(table, params='') {
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`${table}: ${err.message || res.status}`);
+  }
+  return res.json();
+}
+
 async function loadState() {
-  clearTimeout(_rtTimer); // annuleer pending realtime-load als wij nu al bezig zijn
+  clearTimeout(_rtTimer);
   try {
-    const [t, ch, bh, e, ee, sg] = await Promise.all([
-      sb.from('ha_teams').select('*').order('points',{ascending:false}),
-      sb.from('ha_challenge_hist').select('*').order('created_at',{ascending:false}),
-      sb.from('ha_bonus_hist').select('*').order('created_at',{ascending:false}),
-      sb.from('ha_eggs').select('*'),
-      sb.from('ha_easter_eggs').select('*').order('idx'),
-      sb.from('ha_saved_games').select('*').order('created_at',{ascending:false})
+    const [teams, chHist, bHist, eggs, easterEggs, savedGames, cfg] = await Promise.all([
+      sbFetch('ha_teams', 'select=*&order=points.desc'),
+      sbFetch('ha_challenge_hist', 'select=*&order=created_at.desc'),
+      sbFetch('ha_bonus_hist', 'select=*&order=created_at.desc'),
+      sbFetch('ha_eggs', 'select=*'),
+      sbFetch('ha_easter_eggs', 'select=*&order=idx'),
+      sbFetch('ha_saved_games', 'select=*&order=created_at.desc'),
+      sbFetch('ha_config', 'select=*').catch(() => [])
     ]);
-    S.teams = t.data || [];
-    S.challengeHist = ch.data || [];
-    S.bonusHist = bh.data || [];
+    S.teams = Array.isArray(teams) ? teams : [];
+    S.challengeHist = Array.isArray(chHist) ? chHist : [];
+    S.bonusHist = Array.isArray(bHist) ? bHist : [];
     S.eggs = {};
-    (e.data||[]).forEach(r => S.eggs[r.team] = {alive:r.alive, name:r.egg_name});
+    (Array.isArray(eggs) ? eggs : []).forEach(r => S.eggs[r.team] = {alive:r.alive, name:r.egg_name});
     S.easterEggs = {};
-    (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to, found_at:r.found_at});
-    S.savedGames = sg.data || [];
-    const cfgRes = await sb.from('ha_config').select('*').catch(()=>({data:[]}));
-    S.eeActive = ((cfgRes.data)||[]).find(r=>r.key==='ee_active')?.value === 'true';
+    (Array.isArray(easterEggs) ? easterEggs : []).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to, found_at:r.found_at});
+    S.savedGames = Array.isArray(savedGames) ? savedGames : [];
+    S.eeActive = (Array.isArray(cfg) ? cfg : []).find(r => r.key === 'ee_active')?.value === 'true';
     renderAll();
   } catch(err) {
     console.warn('loadState error', err);
+    toast('⚠️ Data laden mislukt: ' + err.message);
   }
 }
 
