@@ -601,7 +601,7 @@ async function loadState() {
     S.eggs = {};
     (e.data||[]).forEach(r => S.eggs[r.team] = {alive:r.alive, name:r.egg_name});
     S.easterEggs = {};
-    (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to});
+    (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to, found_at:r.found_at});
     S.savedGames = sg.data || [];
     // Config apart ophalen zodat een fout hier de rest niet blokkeert
     const cfgRes = await sb.from('ha_config').select('*').catch(()=>({data:[]}));
@@ -760,8 +760,8 @@ document.getElementById('eggEeHint').addEventListener('click',()=>trackClick('eg
 
 // Nav buttons (3× each → EE 9-12)
 document.querySelectorAll('.nav-btn').forEach((btn,i)=>{
-  const eeMap=[9,10,11,12];
-  btn.addEventListener('click',()=>trackClick('nav-'+i,3,eeMap[i]));
+  const eeMap=[9,10,11,12,undefined]; // 5 knoppen: Info,Scorebord,Rad,Jury,Demo (Demo heeft geen EE)
+  if(eeMap[i]!==undefined) btn.addEventListener('click',()=>trackClick('nav-'+i,3,eeMap[i]));
 });
 
 // ── SCORING ───────────────────────────────────────────────────────
@@ -1219,7 +1219,7 @@ document.getElementById('bonusBtn').addEventListener('click',()=>{
 
 function renderEEAdmin(){
   const el=document.getElementById('eeGrid');if(!el)return;
-  const teamOpts=S.teams.map(t=>`<option value="${t.n||t.name}">${t.n||t.name}</option>`).join('');
+  const teamOpts=S.teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
   el.innerHTML=Object.entries(S.easterEggs).sort((a,b)=>a[0]-b[0]).map(([idx,ee])=>{
     const i=parseInt(idx);
     const hint=EE_HINTS[i]||'?';
@@ -1237,17 +1237,19 @@ function renderEEAdmin(){
 }
 function toggleHint(i){const el=document.getElementById('ee-hint-'+i);if(el)el.style.display=el.style.display==='none'?'block':'none';}
 
-async function setEEActive(active){
-  if(!active && !confirm('Easter eggs resetten? Alle gevonden eggs en toegekende punten worden gewist.')) return;
-  try {
-    await fetch(`${FN}/set-ee-active`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-Session-ID':session?.id||''},
-      body: JSON.stringify({active})
-    });
-    toast(active ? '▶️ Easter eggs gestart!' : '🔄 Easter eggs gereset!');
-    await loadState();
-  } catch(e){ toast('❌ '+e.message); }
+function setEEActive(active){
+  requireJury(async()=>{
+    if(!active && !confirm('Easter eggs resetten? Alle gevonden eggs en toegekende punten worden gewist.')) return;
+    try {
+      await fetch(`${FN}/set-ee-active`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Session-ID':session?.session_id||''},
+        body: JSON.stringify({active})
+      });
+      toast(active ? '▶️ Easter eggs gestart!' : '🔄 Easter eggs gereset!');
+      await loadState();
+    } catch(e){ toast('❌ '+e.message); }
+  });
 }
 
 async function awardEE(idx){
@@ -1534,6 +1536,7 @@ const DEMO_STATE = {
     {found:false,awarded_to:''}
   ])),
   savedGames:[],
+  eeActive: true,
 };
 
 let demoMode=false, realS=null, realSession=null;
@@ -1541,7 +1544,7 @@ function toggleDemo(){
   demoMode=!demoMode;
   const btn=document.getElementById('demoToggle');
   if(demoMode){
-    realS={...S};realSession=session;
+    realS=JSON.parse(JSON.stringify(S));realSession=session;
     S=JSON.parse(JSON.stringify(DEMO_STATE));
     session={session_id:'demo',username:'demo'};
     btn.textContent='🔴 Live';btn.style.color='#c02020';
