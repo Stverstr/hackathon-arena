@@ -377,10 +377,11 @@ select:focus{border-color:var(--teal);outline:none;}
           <div class="em" id="rEmoji"></div>
           <h4 id="rName"></h4>
           <p id="rTeams" style="font-weight:600;color:var(--navy);margin-bottom:4px;"></p>
+          <button onclick="document.getElementById('overrideBox').style.display=''" style="background:none;border:none;font-size:.72rem;color:var(--text2);cursor:pointer;padding:4px 0;font-family:'Lexend',sans-serif;">🎡 Fysiek rad verschilt? Overschrijven →</button>
         </div>
-        <div class="override-box" id="overrideBox">
+        <div class="override-box" id="overrideBox" style="display:none">
           <h4>🎡 Overschrijf met fysiek rad</h4>
-          <p>Selecteer wat het fysieke rad aanwees. Bevestigen vereist jury-inlog.</p>
+          <p>Selecteer wat het fysieke rad aanwees.</p>
           <div class="dig" id="digResult"></div>
           <div class="fl">Werkelijke opdracht</div>
           <select id="overrideSel"></select>
@@ -848,19 +849,27 @@ function doSpin(c1,c2){
 function showResult(idx,c1,c2){
   currentCh={idx,c1,c2};
   const ch=CHS[idx];
-  const rb=document.getElementById('resultBox');
-  rb.style.display='';
+  // Result box
+  document.getElementById('resultBox').style.display='';
   document.getElementById('rEmoji').textContent=ch.e;
   document.getElementById('rName').textContent=ch.n;
   document.getElementById('rTeams').textContent=`${c1} ⚔️ ${c2}`;
-  // Override dropdown
+  // Winner buttons — direct zichtbaar
+  const wt=document.getElementById('winnerTitle');
+  const wb=document.getElementById('winBtns');
+  wt.textContent=`⚔️ ${ch.e} ${ch.n} — wie wint?`;
+  wb.innerHTML=`
+    <button class="win-btn" onclick="recordWinner('${c1}')">🏆 ${c1}</button>
+    <button class="win-btn" onclick="recordWinner('${c2}')">🏆 ${c2}</button>`;
+  document.getElementById('winnerSection').style.display='';
+  // Override — optioneel, ingeklapt
   const sel=document.getElementById('overrideSel');
   sel.innerHTML=CHS.map((g,i)=>`<option value="${i}"${i===idx?' selected':''}>${g.e} ${g.n}</option>`).join('');
   document.getElementById('digResult').textContent=`Digitaal rad: ${ch.e} ${ch.n}`;
-  document.getElementById('overrideBox').style.display='';
-  document.getElementById('winnerSection').style.display='none';
+  document.getElementById('overrideBox').style.display='none';
 }
 
+// Override toggle (optioneel)
 document.getElementById('confirmChallengeBtn').addEventListener('click',()=>{
   requireJury(()=>{
     const overrideIdx=parseInt(document.getElementById('overrideSel').value);
@@ -868,16 +877,12 @@ document.getElementById('confirmChallengeBtn').addEventListener('click',()=>{
     const ch=CHS[overrideIdx];
     document.getElementById('rEmoji').textContent=ch.e;
     document.getElementById('rName').textContent=ch.n;
-    document.getElementById('overrideBox').style.display='none';
-    // Show winner buttons
-    const ws=document.getElementById('winnerSection');
-    const wt=document.getElementById('winnerTitle');
-    const wb=document.getElementById('winBtns');
-    wt.textContent=`⚔️ ${ch.e} ${ch.n} — wie wint?`;
-    wb.innerHTML=`
+    document.getElementById('winnerTitle').textContent=`⚔️ ${ch.e} ${ch.n} — wie wint?`;
+    document.getElementById('winBtns').innerHTML=`
       <button class="win-btn" onclick="recordWinner('${currentCh.c1}')">🏆 ${currentCh.c1}</button>
       <button class="win-btn" onclick="recordWinner('${currentCh.c2}')">🏆 ${currentCh.c2}</button>`;
-    ws.style.display='';
+    document.getElementById('overrideBox').style.display='none';
+    document.getElementById('winnerSection').style.display='';
   });
 });
 
