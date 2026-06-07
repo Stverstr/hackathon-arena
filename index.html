@@ -471,7 +471,7 @@ select:focus{border-color:var(--teal);outline:none;}
     <div class="admin-card" id="secretsCard" style="display:none">
       <h3>💋 Persoonlijke Geheimen<span class="kitty-heart" data-secret="7">🤍</span></h3>
       <div id="secretsLock">
-        <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Er zijn 10 verborgen boodschappen verstopt op deze pagina. Vul het geheime wachtwoord in om de hartjes te ontsluiten.<span class="kitty-heart" data-secret="8">🤍</span></p>
+        <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Er zijn 10 verborgen boodschappen verstopt op deze pagina. Vul het geheime wachtwoord in om de hartjes te ontsluiten.</p>
         <div style="display:flex;gap:8px;">
           <input type="password" id="secretsPwd" class="bonus-pts-input" style="flex:1;font-size:.9rem;letter-spacing:1px;" placeholder="Geheim wachtwoord…">
           <button class="bonus-btn" onclick="checkSecretsPassword()">🔓</button>
@@ -482,6 +482,10 @@ select:focus{border-color:var(--teal);outline:none;}
         <div style="font-size:.8rem;color:#8b0057;font-weight:600;margin-bottom:4px;line-height:1.5;">🌸 De hartjes zijn nu zichtbaar op deze pagina.<span class="kitty-heart" data-secret="9">🤍</span><br><span style="font-weight:400;color:var(--text2);">Zoek ze en klik ze aan om de boodschappen te lezen.</span></div>
         <div id="secretsFoundCounter" style="font-size:.72rem;color:#8b0057;margin:10px 0 14px;font-weight:600;"></div>
         <div id="secretsFoundList" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:.72rem;color:var(--text2);">Alle boodschappen gevonden?<span class="kitty-heart" data-secret="8">🤍</span></span>
+          <button class="bonus-btn" style="font-size:.75rem;padding:6px 14px;background:#f5e6f0;color:#8b0057;border:1px solid #d4a0c0;" onclick="secretsLogout()">🔒 Uitloggen & resetten</button>
+        </div>
       </div>
     </div>
 
@@ -1223,6 +1227,20 @@ function checkSecretsPassword(){
     document.getElementById('secretsPwdErr').style.display='block';
     document.getElementById('secretsPwd').value='';
   }
+}
+
+function secretsLogout(){
+  localStorage.removeItem('ha_kitty_found');
+  secretsUnlocked=false;
+  document.getElementById('secretsUnlocked').style.display='none';
+  document.getElementById('secretsLock').style.display='block';
+  document.getElementById('secretsPwd').value='';
+  document.getElementById('secretsPwdErr').style.display='none';
+  document.querySelectorAll('.kitty-heart').forEach(h=>{
+    h.classList.remove('unlocked');
+    h.classList.remove('found');
+  });
+  toast('🔒 Uitgelogd. Hartjes zijn terug verborgen.');
 }
 
 function renderFoundSecrets(){
