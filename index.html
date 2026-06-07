@@ -1259,9 +1259,9 @@ document.getElementById('bonusBtn').addEventListener('click',()=>{
 function renderEEAdmin(){
   const el=document.getElementById('eeGrid');if(!el)return;
   const teamOpts=S.teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
-  el.innerHTML=Object.entries(S.easterEggs).sort((a,b)=>a[0]-b[0]).map(([idx,ee])=>{
-    const i=parseInt(idx);
-    const hint=EE_HINTS[i]||'?';
+  // Toon altijd alle 20 easter eggs op jury-pagina (ook niet-gevonden)
+  el.innerHTML=EE_HINTS.map((hint,i)=>{
+    const ee=S.easterEggs[i]||{found:false,awarded_to:null};
     return `
     <div class="ee-item${ee.found?' found':''}${ee.awarded_to?' awarded':''}">
       <div style="display:flex;align-items:center;gap:6px;">
@@ -1270,7 +1270,7 @@ function renderEEAdmin(){
       </div>
       <div id="ee-hint-${i}" class="ee-hint" style="display:none;">${hint}</div>
       <div class="ee-lbl">${ee.awarded_to?`✅ Toegekend aan ${ee.awarded_to}`:ee.found?'🔍 Gevonden':'⏳ Nog niet gevonden'}</div>
-      ${ee.found&&!ee.awarded_to&&session?`<div class="ee-award-row"><select id="ee-sel-${idx}">${teamOpts}</select><button class="ee-award-btn" onclick="awardEE(${idx})">+1 pt</button></div>`:''}
+      ${ee.found&&!ee.awarded_to&&session?`<div class="ee-award-row"><select id="ee-sel-${i}">${teamOpts}</select><button class="ee-award-btn" onclick="awardEE(${i})">+1 pt</button></div>`:''}
     </div>`;
   }).join('');
 }
