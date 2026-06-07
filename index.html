@@ -587,14 +587,13 @@ const clickCounts = {};
 async function loadState() {
   if(demoMode){renderAll();return;} // demo modus: nooit echte data ophalen
   try {
-    const [t, ch, bh, e, ee, sg, cfg] = await Promise.all([
+    const [t, ch, bh, e, ee, sg] = await Promise.all([
       sb.from('ha_teams').select('*').order('updated_at',{ascending:false}),
       sb.from('ha_challenge_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_bonus_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_eggs').select('*'),
       sb.from('ha_easter_eggs').select('*').order('idx'),
-      sb.from('ha_saved_games').select('*').order('created_at',{ascending:false}),
-      sb.from('ha_config').select('*')
+      sb.from('ha_saved_games').select('*').order('created_at',{ascending:false})
     ]);
     S.teams = t.data || [];
     S.challengeHist = ch.data || [];
@@ -604,7 +603,9 @@ async function loadState() {
     S.easterEggs = {};
     (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to});
     S.savedGames = sg.data || [];
-    S.eeActive = (cfg.data||[]).find(r=>r.key==='ee_active')?.value === 'true';
+    // Config apart ophalen zodat een fout hier de rest niet blokkeert
+    const cfgRes = await sb.from('ha_config').select('*').catch(()=>({data:[]}));
+    S.eeActive = ((cfgRes.data)||[]).find(r=>r.key==='ee_active')?.value === 'true';
     renderAll();
   } catch(err) {
     console.warn('loadState error', err);
