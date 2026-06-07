@@ -450,6 +450,31 @@ select:focus{border-color:var(--teal);outline:none;}
         <button class="danger-btn" id="resetBtn">🗑️ Alles resetten (onomkeerbaar!)</button>
       </div>
     </div>
+
+    <!-- Spelbeheer -->
+    <div class="admin-card" id="spelbeheerCard" style="display:none">
+      <h3>💾 Spelbeheer</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="bonus-btn" id="saveGameBtn">💾 Huidig spel opslaan</button>
+        <button class="bonus-btn" style="background:linear-gradient(135deg,var(--mint),var(--teal));" id="newGameBtn">🆕 Nieuw spel starten</button>
+      </div>
+      <div style="font-size:.76rem;color:var(--text2);font-weight:600;margin-bottom:8px;">Opgeslagen spellen</div>
+      <div id="savedGamesList"><p style="font-size:.76rem;color:var(--text2)">Nog geen spellen opgeslagen.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- New Game Modal -->
+<div id="newGameModal" style="display:none;position:fixed;inset:0;background:rgba(26,33,96,.55);z-index:500;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:var(--r);padding:28px;max-width:480px;width:100%;box-shadow:0 8px 48px rgba(26,33,96,.18);max-height:90vh;overflow-y:auto;">
+    <h2 style="font-size:1.1rem;font-weight:800;color:var(--navy);margin-bottom:6px;">🆕 Nieuw spel starten</h2>
+    <p style="font-size:.8rem;color:var(--text2);margin-bottom:18px;">Stel de teams in voor het nieuwe spel. Het huidige spel wordt gewist.</p>
+    <div id="ngTeamRows"></div>
+    <button onclick="addNgTeam()" style="background:none;border:1px dashed var(--border);border-radius:8px;width:100%;padding:9px;font-family:'Lexend',sans-serif;font-size:.83rem;color:var(--text2);cursor:pointer;margin-top:6px;">+ Team toevoegen</button>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="bonus-btn" onclick="confirmNewGame()" style="flex:1;">✅ Starten</button>
+      <button onclick="closeNewGameModal()" style="flex:1;background:#f2f5ff;border:none;border-radius:10px;padding:11px;font-family:'Lexend',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer;color:var(--navy);">Annuleer</button>
+    </div>
   </div>
 </div>
 
@@ -499,7 +524,7 @@ const WHEEL_COLORS=['#00c2d1','#00d9a8','#1a6bd4','#0090d0','#00a8bc','#00c499',
 const MEDALS=['🥇','🥈','🥉'];
 
 // ── STATE ─────────────────────────────────────────────────────────
-let S = { teams:[], challengeHist:[], bonusHist:[], eggs:{}, easterEggs:{} };
+let S = { teams:[], challengeHist:[], bonusHist:[], eggs:{}, easterEggs:{}, savedGames:[] };
 let session = null;   // {session_id, username}
 let pendingCb = null;
 let spinning = false, rot = 0;
@@ -509,12 +534,13 @@ const clickCounts = {};
 // ── SUPABASE LOAD ─────────────────────────────────────────────────
 async function loadState() {
   try {
-    const [t, ch, bh, e, ee] = await Promise.all([
+    const [t, ch, bh, e, ee, sg] = await Promise.all([
       sb.from('ha_teams').select('*').order('updated_at',{ascending:false}),
       sb.from('ha_challenge_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_bonus_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_eggs').select('*'),
-      sb.from('ha_easter_eggs').select('*').order('idx')
+      sb.from('ha_easter_eggs').select('*').order('idx'),
+      sb.from('ha_saved_games').select('*').order('created_at',{ascending:false})
     ]);
     S.teams = t.data || [];
     S.challengeHist = ch.data || [];
@@ -523,6 +549,7 @@ async function loadState() {
     (e.data||[]).forEach(r => S.eggs[r.team] = {alive:r.alive, name:r.egg_name});
     S.easterEggs = {};
     (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to});
+    S.savedGames = sg.data || [];
     renderAll();
   } catch(err) {
     console.warn('loadState error', err);
@@ -792,6 +819,7 @@ async function recordWinner(winner) {
     document.getElementById('overrideBox').style.display='none';
     document.getElementById('winnerSection').style.display='none';
     toast(`✅ ${winner} wint de uitdaging!`);
+    await loadState();
   } catch(e){ toast('❌ '+e.message); requireJury(()=>recordWinner(winner)); }
 }
 
@@ -875,8 +903,9 @@ function renderAdmin(){
   renderEEAdmin();
   renderHistAdmin();
   // Show jury-only sections
-  const juryOnly=['chListCard','secretsCard','resetSection'];
+  const juryOnly=['chListCard','secretsCard','resetSection','spelbeheerCard'];
   juryOnly.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=session?'':'none';});
+  renderSavedGames();
   if(session && !document.getElementById('chList').innerHTML) renderChallengeList();
 }
 
@@ -916,13 +945,13 @@ async function addTeam(){
   const n=document.getElementById('newName').value.trim();
   const c=document.getElementById('newColor').value;
   if(!n){toast('❌ Vul een teamnaam in.');return;}
-  try{await juryAction('add-team',{name:n,color:c});document.getElementById('newName').value='';toast(`✅ ${n} toegevoegd!`);}
+  try{await juryAction('add-team',{name:n,color:c});document.getElementById('newName').value='';toast(`✅ ${n} toegevoegd!`);await loadState();}
   catch(e){toast('❌ '+e.message);}
 }
 
 async function removeTeam(name){
   if(!confirm(`Team "${name}" verwijderen?`))return;
-  try{await juryAction('remove-team',{name});toast(`🗑️ ${name} verwijderd.`);}
+  try{await juryAction('remove-team',{name});toast(`🗑️ ${name} verwijderd.`);await loadState();}
   catch(e){toast('❌ '+e.message);}
 }
 
@@ -946,12 +975,12 @@ function renderEggAdmin(){
 }
 
 async function updateEgg(team,alive){
-  try{await juryAction('update-egg',{team,alive,egg_name:document.getElementById('en-'+team)?.value||''});toast(alive?`🥚 ${team} ei hersteld!`:`💔 ${team} ei stuk!`);}
+  try{await juryAction('update-egg',{team,alive,egg_name:document.getElementById('en-'+team)?.value||''});toast(alive?`🥚 ${team} ei hersteld!`:`💔 ${team} ei stuk!`);await loadState();}
   catch(e){toast('❌ '+e.message);}
 }
 async function saveEggName(team){
   const name=document.getElementById('en-'+team)?.value||'';
-  try{await juryAction('update-egg',{team,alive:S.eggs[team]?.alive??true,egg_name:name});toast(`💾 Naam opgeslagen!`);}
+  try{await juryAction('update-egg',{team,alive:S.eggs[team]?.alive??true,egg_name:name});toast(`💾 Naam opgeslagen!`);await loadState();}
   catch(e){toast('❌ '+e.message);}
 }
 
@@ -972,7 +1001,7 @@ document.getElementById('bonusBtn').addEventListener('click',()=>{
     const pts=parseInt(document.getElementById('bonusPts').value);
     const comment=document.getElementById('bonusComment').value.trim();
     if(!team||isNaN(pts)){toast('❌ Selecteer team en punten.');return;}
-    try{await juryAction('add-bonus',{team,points:pts,comment});document.getElementById('bonusPts').value='';document.getElementById('bonusComment').value='';toast(`✅ ${pts>0?'+':''}${pts} pt voor ${team}!`);}
+    try{await juryAction('add-bonus',{team,points:pts,comment});document.getElementById('bonusPts').value='';document.getElementById('bonusComment').value='';toast(`✅ ${pts>0?'+':''}${pts} pt voor ${team}!`);await loadState();}
     catch(e){toast('❌ '+e.message);}
   });
 });
@@ -991,7 +1020,7 @@ function renderEEAdmin(){
 async function awardEE(idx){
   const team=document.getElementById(`ee-sel-${idx}`)?.value;
   if(!team){toast('❌ Selecteer een team.');return;}
-  try{await juryAction('award-ee',{idx:parseInt(idx),team});toast(`🐣 +1 pt voor ${team}!`);}
+  try{await juryAction('award-ee',{idx:parseInt(idx),team});toast(`🐣 +1 pt voor ${team}!`);await loadState();}
   catch(e){toast('❌ '+e.message);}
 }
 
@@ -1035,9 +1064,84 @@ document.getElementById('addBtn').addEventListener('click',()=>requireJury(addTe
 document.getElementById('resetBtn').addEventListener('click',()=>{
   requireJury(async()=>{
     if(!confirm('Alle scores en geschiedenis resetten? Dit kan niet ongedaan gemaakt worden!'))return;
-    try{await juryAction('reset-game');toast('🔄 Alles gereset!');}
+    try{await juryAction('reset-game');toast('🔄 Alles gereset!');await loadState();}
     catch(e){toast('❌ '+e.message);}
   });
+});
+
+// ── SPELBEHEER ────────────────────────────────────────────────────
+function renderSavedGames(){
+  const el=document.getElementById('savedGamesList');if(!el)return;
+  if(!S.savedGames.length){el.innerHTML='<p style="font-size:.76rem;color:var(--text2)">Nog geen spellen opgeslagen.</p>';return;}
+  el.innerHTML=S.savedGames.map(g=>{
+    const d=new Date(g.created_at);
+    const ds=d.toLocaleDateString('nl-BE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.85rem;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🏆 ${g.name}</div>
+        <div style="font-size:.72rem;color:var(--text2);">${ds}${g.winner?` · Winnaar: <strong>${g.winner}</strong>`:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('saveGameBtn').addEventListener('click',()=>{
+  requireJury(async()=>{
+    const game_name=prompt('Naam voor dit spel (bv. "Ronde 1 - Team A wint"):');
+    if(!game_name)return;
+    const sorted=[...S.teams].sort((a,b)=>totalPts(b)-totalPts(a));
+    const snapshot={
+      teams:sorted.map(t=>({name:t.name,color:t.color,total:totalPts(t)})),
+      saved_at:new Date().toISOString()
+    };
+    try{
+      await juryAction('save-game',{game_name,snapshot});
+      toast(`💾 "${game_name}" opgeslagen!`);
+      await loadState();
+    }catch(e){toast('❌ '+e.message);}
+  });
+});
+
+// New Game
+let ngTeams=[{name:'',color:'#00c2d1'},{name:'',color:'#00d9a8'},{name:'',color:'#1a2160'},{name:'',color:'#0082c0'},{name:'',color:'#7b61ff'}];
+
+function openNewGameModal(){
+  ngTeams=[{name:'',color:'#00c2d1'},{name:'',color:'#00d9a8'},{name:'',color:'#1a2160'},{name:'',color:'#0082c0'},{name:'',color:'#7b61ff'}];
+  renderNgTeams();
+  const m=document.getElementById('newGameModal');m.style.display='flex';
+}
+function closeNewGameModal(){document.getElementById('newGameModal').style.display='none';}
+
+function renderNgTeams(){
+  const el=document.getElementById('ngTeamRows');if(!el)return;
+  el.innerHTML=ngTeams.map((t,i)=>`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+      <input type="color" value="${t.color}" onchange="ngTeams[${i}].color=this.value" style="width:38px;height:38px;border:none;border-radius:8px;cursor:pointer;padding:2px;">
+      <input type="text" value="${t.name}" oninput="ngTeams[${i}].name=this.value" placeholder="Teamnaam ${i+1}" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Lexend',sans-serif;font-size:.85rem;">
+      ${ngTeams.length>2?`<button onclick="ngTeams.splice(${i},1);renderNgTeams();" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#c02020;padding:4px;">✕</button>`:''}
+    </div>`).join('');
+}
+
+function addNgTeam(){
+  const colors=['#00c2d1','#00d9a8','#1a2160','#0082c0','#7b61ff','#ff6b6b','#ffd700'];
+  ngTeams.push({name:'',color:colors[ngTeams.length%colors.length]});
+  renderNgTeams();
+}
+
+async function confirmNewGame(){
+  const teams=ngTeams.filter(t=>t.name.trim());
+  if(teams.length<2){toast('❌ Minimaal 2 teams nodig.');return;}
+  if(!confirm(`Nieuw spel starten met ${teams.length} teams? Alle huidige data wordt gewist!`))return;
+  try{
+    await juryAction('new-game',{teams:teams.map(t=>({name:t.name.trim(),color:t.color}))});
+    closeNewGameModal();
+    toast('🆕 Nieuw spel gestart!');
+    await loadState();
+  }catch(e){toast('❌ '+e.message);}
+}
+
+document.getElementById('newGameBtn').addEventListener('click',()=>{
+  requireJury(openNewGameModal);
 });
 
 // Login modal events
