@@ -328,7 +328,7 @@ select:focus{border-color:var(--teal);outline:none;}
   <div class="wrap">
     <div class="sec-title"><span>📖</span> Spelregels</div>
     <div class="rules-grid">
-      <div class="rule-card"><div class="bg-n">1</div><div class="ic">⚔️</div><h3>Uitdagen</h3><p>Je mag een team uitdagen dat <strong>max. 2 plaatsen</strong> boven of onder jou staat op het scorebord.</p></div>
+      <div class="rule-card"><div class="bg-n">1</div><div class="ic">⚔️</div><h3>Uitdagen</h3><p>Je mag enkel een team uitdagen dat <strong>boven jou staat</strong> op het scorebord. Wie hoger staat heeft meer te verliezen!</p></div>
       <div class="rule-card"><div class="bg-n">2</div><div class="ic">🎡</div><h3>Rad van Fortuin</h3><p>De jury draait het rad — het lot kiest het spelletje. Geen excuses achteraf!</p></div>
       <div class="rule-card"><div class="bg-n">3</div><div class="ic">👨‍⚖️</div><h3>Jury beslist</h3><p>Beide teams doen het spelletje live. De jury bepaalt wie wint.</p></div>
       <div class="rule-card"><div class="bg-n">4</div><div class="ic">🏅</div><h3>Punten</h3><p>Winnen = <strong>+3 punten</strong>. Verliezen = 0. Elk team kan <strong>max. 10 uitdagingen</strong> starten.</p></div>
@@ -541,7 +541,6 @@ const sb      = supabase.createClient(SB_URL, SB_KEY);
 // ── GAME DATA ─────────────────────────────────────────────────────
 const CHS = [
   {e:"🍬",n:"Marshmallows",d:"Wie kan de meeste large marshmallows tegelijk in zijn mond stoppen? Kauwen verboden."},
-  {e:"🥚",n:"Eiwit stijfkloppen",d:"Met de hand klop je een eiwit stijf. Jury controleert door de kom boven het hoofd te houden."},
   {e:"🏓",n:"Beerpong zonder bier",d:"10 minuten lang zo veel mogelijk ballen in de bekers gooien. Meeste punten wint."},
   {e:"⚡",n:"Spelletje Zenuwen",d:"Beweeg de lus over de draad zonder de draad aan te raken. Wie de minste 'bzzzt' heeft, wint."},
   {e:"🃏",n:"Kaartenhuisje",d:"Wie bouwt het hoogste kaartenhuisje in 2 minuten? Jury meet de hoogte na het signaal."},
@@ -569,7 +568,6 @@ const CHS = [
   {e:"🗼",n:"Jenga Speed",d:"Beurtelings zo snel mogelijk een blokje trekken. Wie de toren doet vallen verliest."},
   {e:"🗒️",n:"Post-it toren",d:"Stack zoveel mogelijk post-its op je voorhoofd in 1 minuut zonder handen."},
   {e:"📦",n:"Tetris IRL",d:"Stapel 10 willekeurige voorwerpen zo stabiel en hoog mogelijk in 2 minuten."},
-  {e:"👁️",n:"Blindproeven",d:"Identificeer 3 van 5 mysterieuze voedingsmiddelen met blinddoek."},
 ];
 const WHEEL_COLORS=['#00c2d1','#00d9a8','#1a6bd4','#0090d0','#00a8bc','#00c499','#1a8cd0','#00b8d0','#0070b0','#00cc99','#1a5cb0','#00d0b8','#0080c8','#00d490','#1a48a0','#00b4d8','#00e0a8','#0098c8','#1a3a90','#00ccb0'];
 const MEDALS=['🥇','🥈','🥉'];
@@ -806,7 +804,7 @@ function canChallenge(a,b) {
   if(challengeCount(b)>=10) return {ok:false,reason:`${b} heeft al 10 uitdagingen gespeeld.`};
   const ranked=[...S.teams].sort((x,y)=>totalPts(y)-totalPts(x));
   const pa=ranked.findIndex(t=>t.name===a), pb=ranked.findIndex(t=>t.name===b);
-  if(Math.abs(pa-pb)>2) return {ok:false,reason:'Teams staan meer dan 2 plaatsen uit elkaar.'};
+  if(pb>=pa) return {ok:false,reason:`${a} kan ${b} niet uitdagen: je mag enkel teams uitdagen die boven jou staan.`};
   return {ok:true};
 }
 
@@ -1107,7 +1105,8 @@ function filterSel2(c1){
   const pa=ranked.findIndex(t=>t.name===c1);
   const eligible=S.teams.filter(t=>{
     const pb=ranked.findIndex(r=>r.name===t.name);
-    return t.name!==c1 && Math.abs(pa-pb)<=2 && challengeCount(t.name)<10 && challengeCount(c1)<10;
+    // Alleen teams die hoger gerangschikt zijn (lager index = beter)
+    return t.name!==c1 && pb<pa && challengeCount(t.name)<10 && challengeCount(c1)<10;
   });
   if(eligible.length===0){
     s2.innerHTML=`<option value="">— Geen geschikte tegenstanders —</option>`;
@@ -1215,9 +1214,8 @@ function renderEggAdmin(){
       <div class="egg-nm">${egg.name||'(geen naam)'}</div>
       ${session?`<input class="egg-name-input" id="en-${t.name}" value="${egg.name||''}" placeholder="Naam voor het ei…">
       <div class="egg-actions">
-        ${egg.alive
-          ?`<button class="egg-btn break" onclick="updateEgg('${t.name}',false)">💔 Stuk</button>`
-          :`<button class="egg-btn restore" onclick="updateEgg('${t.name}',true)">🥚 Herstel</button>`}
+        <button class="egg-btn break" onclick="updateEgg('${t.name}',false)" ${!egg.alive?'disabled style="opacity:.35;cursor:not-allowed"':''}>💔 Stuk</button>
+        <button class="egg-btn restore" onclick="updateEgg('${t.name}',true)" ${egg.alive?'disabled style="opacity:.35;cursor:not-allowed"':''}>🥚 Herstel</button>
         <button class="egg-btn restore" onclick="saveEggName('${t.name}')">💾 Naam</button>
       </div>`:''}
     </div>`;
