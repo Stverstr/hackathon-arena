@@ -192,9 +192,9 @@ select:focus{border-color:var(--teal);outline:none;}
 .secret-item .si-n{font-size:.68rem;color:#8b0057;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px;}
 .secret-item p{font-size:.83rem;color:var(--navy);line-height:1.65;font-style:italic;}
 /* hidden hearts */
-.kitty-heart{font-size:.65rem;opacity:.04;cursor:pointer;transition:opacity .3s,transform .3s;user-select:none;display:inline-block;margin-left:4px;vertical-align:middle;}
-.kitty-heart:hover{opacity:.45;transform:scale(1.4);}
-.kitty-heart.unlocked{opacity:.18;animation:hbeat 2.2s ease-in-out infinite;}
+.kitty-heart{font-size:.65rem;opacity:.04;cursor:default;pointer-events:none;transition:opacity .3s,transform .3s;user-select:none;display:inline-block;margin-left:4px;vertical-align:middle;}
+.kitty-heart.unlocked{cursor:pointer;pointer-events:auto;opacity:.18;animation:hbeat 2.2s ease-in-out infinite;}
+.kitty-heart.unlocked:hover{opacity:.5;transform:scale(1.4);}
 .kitty-heart.found{display:none;}
 @keyframes hbeat{0%,100%{transform:scale(1);}40%{transform:scale(1.3);}60%{transform:scale(1.1);}}
 .secret-item p{font-size:.82rem;color:var(--text);line-height:1.5;}
@@ -1111,35 +1111,14 @@ function renderChallengeList(){
     </div>`).join('');
 }
 
-// ── KITTY'S GEHEIMEN ──────────────────────────────────────────────
-const KITTY_SECRETS = [
-  {icon:'💘', title:'Bumble',
-   msg:'Je had mijn beste vriend ook gematcht op Bumble. Hij verloor — ik won. Ik weet niet wie er meer blij was. Ik weet alleen dat jij de juiste keuze maakte.'},
-  {icon:'🌅', title:'Eerste date',
-   msg:'We wandelden samen voor de wereld wakker was. Daarna bleven we naar de sterren kijken alsof we ergens naartoe moesten. We hoefden nergens naartoe.'},
-  {icon:'🏠', title:'Thuis',
-   msg:'Ik nodigde mezelf misschien iets te enthousiast uit bij jou thuis. Maar jij liet me elke keer toch binnen. Dat zegt eigenlijk alles.'},
-  {icon:'🌙', title:'4de date',
-   msg:'De vierde keer dat we elkaar zagen, lieten we alle voorzichtigheid varen. Sommige dingen hoef je niet te plannen — ze gebeuren gewoon goed.'},
-  {icon:'🚿', title:'Valkenburg',
-   msg:'Een weekendje Valkenburg. Een douche die te goed was om alleen te gebruiken. Een sauna die dat bevestigde. Jij maakte van een gewoon weekend iets wat ik nooit vergeet.'},
-  {icon:'🎰', title:'Casino',
-   msg:'We verlieten het casino met meer geld dan we binnengingen. Maar de echte jackpot had ik al voor we aan de speeltafels zaten.'},
-  {icon:'🚡', title:'Stoeltjeslift',
-   msg:'Hand in hand op een stoeltjeslift, boven alles uit. De wereld lag beneden ons — maar ik had alleen oog voor jou.'},
-  {icon:'🏰', title:'Kasteel',
-   msg:'We bezochten een kasteel. Jij paste er volledig in. Want jij bent altijd al de koningin van dit verhaal geweest.'},
-  {icon:'💃', title:'Dansen',
-   msg:'We dansten tot diep in de nacht. De wereld mocht wachten. Ik wilde nergens anders zijn dan daar, met jou, bewegend op muziek.'},
-  {icon:'🎻', title:'Belofte',
-   msg:'We stelen warmte uit elk vrij momentje. Vraag van de dag. Biertje aan de toog. Exclusief zijn — na een héél debat. Je weet het nog niet, maar ik ga je ooit een strijkorkest cadeau doen. Dit is mijn belofte.'},
-];
-const SECRETS_PWD = 'EverybodylovesStijn';
+// ── KITTY'S GEHEIMEN (content in DB, niet in HTML) ────────────────
+const SECRETS_PWD = 'EverybodylovesStijn'; // wachtwoord mag in HTML
 let secretsUnlocked = false;
 
 function getFoundSecrets(){return JSON.parse(localStorage.getItem('ha_kitty_found')||'[]');}
-function markSecretFound(idx){
-  const f=getFoundSecrets();if(!f.includes(idx)){f.push(idx);localStorage.setItem('ha_kitty_found',JSON.stringify(f));}
+function saveFoundSecret(idx, name, message){
+  const f=getFoundSecrets();
+  if(!f.find(s=>s.idx===idx)){f.push({idx,name,message});localStorage.setItem('ha_kitty_found',JSON.stringify(f));}
 }
 
 function checkSecretsPassword(){
@@ -1149,6 +1128,11 @@ function checkSecretsPassword(){
     document.getElementById('secretsLock').style.display='none';
     document.getElementById('secretsUnlocked').style.display='block';
     document.querySelectorAll('.kitty-heart').forEach(h=>h.classList.add('unlocked'));
+    // Restore already-found hearts as hidden
+    getFoundSecrets().forEach(s=>{
+      const h=document.querySelector(`.kitty-heart[data-secret="${s.idx}"]`);
+      if(h)h.classList.add('found');
+    });
     renderFoundSecrets();
     toast('🌸 Hartjes ontgrendeld! Zoek ze op de pagina.');
   } else {
@@ -1161,40 +1145,55 @@ function renderFoundSecrets(){
   const found=getFoundSecrets();
   const counter=document.getElementById('secretsFoundCounter');
   const list=document.getElementById('secretsFoundList');
-  if(counter)counter.textContent=`${found.length} / ${KITTY_SECRETS.length} boodschappen gevonden`;
+  if(counter)counter.textContent=`${found.length} / 10 boodschappen gevonden`;
   if(!list)return;
-  list.innerHTML=found.sort((a,b)=>a-b).map(i=>{
-    const s=KITTY_SECRETS[i];
-    return `<div class="secret-item"><div class="si-icon">${s.icon}</div><div class="si-n">${s.title}</div><p>${s.msg}</p></div>`;
+  list.innerHTML=found.sort((a,b)=>a.idx-b.idx).map(s=>{
+    const parts=s.name.split(' ');
+    const icon=parts[0];const title=parts.slice(1).join(' ');
+    return `<div class="secret-item"><div class="si-icon">${icon}</div><div class="si-n">${title}</div><p>${s.message}</p></div>`;
   }).join('');
 }
 
-function revealSecret(idx){
-  if(!secretsUnlocked){toast('🔒 Vul eerst het wachtwoord in bij Persoonlijke Geheimen.');return;}
-  markSecretFound(idx);
-  const heart=document.querySelector(`.kitty-heart[data-secret="${idx}"]`);
-  if(heart)heart.classList.add('found');
-  renderFoundSecrets();
-  const s=KITTY_SECRETS[idx];
-  // Show popup
-  document.getElementById('eeBig').textContent=s.icon;
-  document.getElementById('eeTitle').textContent=s.title;
-  document.getElementById('eeMsg').textContent=s.msg;
+async function revealSecret(idx){
+  if(!secretsUnlocked)return; // hartje is pointer-events:none, maar toch check
+  // Check if already found in localStorage
+  const already=getFoundSecrets().find(s=>s.idx===idx);
+  if(already){
+    const parts=already.name.split(' ');
+    document.getElementById('eeBig').textContent=parts[0];
+    document.getElementById('eeTitle').textContent=parts.slice(1).join(' ');
+    document.getElementById('eeMsg').textContent=already.message;
+    document.getElementById('eeOverlay').classList.add('open');
+    return;
+  }
+  // Fetch from DB (content nooit in HTML)
+  document.getElementById('eeBig').textContent='💋';
+  document.getElementById('eeTitle').textContent='Even laden…';
+  document.getElementById('eeMsg').textContent='';
   document.getElementById('eeOverlay').classList.add('open');
+  try{
+    const r=await fetch(`${FN}/get-secret-content?idx=${idx}`,{
+      headers:{'X-Secret-Password':SECRETS_PWD}
+    });
+    if(!r.ok)throw new Error('niet gevonden');
+    const s=await r.json();
+    const parts=s.name.split(' ');
+    document.getElementById('eeBig').textContent=parts[0];
+    document.getElementById('eeTitle').textContent=parts.slice(1).join(' ');
+    document.getElementById('eeMsg').textContent=s.message;
+    saveFoundSecret(idx,s.name,s.message);
+    const heart=document.querySelector(`.kitty-heart[data-secret="${idx}"]`);
+    if(heart)heart.classList.add('found');
+    renderFoundSecrets();
+  }catch(e){
+    document.getElementById('eeTitle').textContent='Oeps!';
+    document.getElementById('eeMsg').textContent='Boodschap kon niet worden geladen. Probeer opnieuw.';
+  }
 }
 
-// Attach heart click listeners (after DOM ready)
+// Hartjes: click listener (hartjes zijn pointer-events:none tot unlocked)
 document.querySelectorAll('.kitty-heart').forEach(h=>{
   h.addEventListener('click',e=>{e.stopPropagation();revealSecret(parseInt(h.dataset.secret));});
-});
-
-// Restore found state on load
-window.addEventListener('load',()=>{
-  const found=getFoundSecrets();
-  found.forEach(i=>{
-    const h=document.querySelector(`.kitty-heart[data-secret="${i}"]`);
-    if(h)h.classList.add('found');
-  });
 });
 
 // Add team button
