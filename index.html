@@ -334,7 +334,7 @@ select:focus{border-color:var(--teal);outline:none;}
       <div class="rule-card"><div class="bg-n">3</div><div class="ic">👨‍⚖️</div><h3>Jury beslist</h3><p>Beide teams doen het spelletje live. De jury bepaalt wie wint.</p></div>
       <div class="rule-card"><div class="bg-n">4</div><div class="ic">🏅</div><h3>Punten</h3><p>Winnen = <strong>+3 punten</strong>. Verliezen = 0. Elk team kan <strong>max. 10 uitdagingen</strong> starten.</p></div>
       <div class="rule-card"><div class="bg-n">5</div><div class="ic">🥚</div><h3>Het Ei</h3><p>Elk team krijgt een ei. Houd het in leven = <strong>+6 punten</strong>. Je mag andermans ei stukmaken. Personaliseer je ei!<br><br>⚠️ <strong>Het ei moet ten alle tijde zichtbaar zijn voor iedereen.</strong></p></div>
-      <div class="rule-card"><div class="bg-n">6</div><div class="ic">🐣</div><h3>Easter Eggs</h3><p>Er zijn <strong>20 verborgen Easter eggs</strong> in deze app. Eerste vinder = <strong>+1 punt</strong>. Meld het aan de jury!</p></div>
+      <div class="rule-card" id="eeRuleCard" style="display:none"><div class="bg-n">6</div><div class="ic">🐣</div><h3>Easter Eggs</h3><p>Er zijn <strong>20 verborgen Easter eggs</strong> in deze app. Eerste vinder = <strong>+1 punt</strong>. Meld het aan de jury!</p></div>
     </div>
     <div class="divider"></div>
     <div class="sec-title"><span>💡</span> Puntenoverzicht</div>
@@ -344,7 +344,7 @@ select:focus{border-color:var(--teal);outline:none;}
         <tr><td>✅ Uitdaging winnen</td><td><span class="badge g">+3 pts</span></td></tr>
         <tr><td>❌ Uitdaging verliezen</td><td><span class="badge r">+0 pts</span></td></tr>
         <tr><td>🥚 Ei levend houden (eindstand)</td><td><span class="badge g">+6 pts</span></td></tr>
-        <tr><td>🐣 Easter egg als eerste vinden</td><td><span class="badge g">+1 pt</span></td></tr>
+        <tr id="eePointsRow" style="display:none"><td>🐣 Easter egg als eerste vinden</td><td><span class="badge g">+1 pt</span></td></tr>
         <tr><td>😴 Uitdaging weigeren</td><td><span class="badge r">–1 pt straf</span></td></tr>
         <tr><td>🎖️ Jury bonus/straf</td><td><span class="badge b">variabel</span></td></tr>
       </tbody>
@@ -457,6 +457,11 @@ select:focus{border-color:var(--teal);outline:none;}
     <!-- Easter egg awards -->
     <div class="admin-card">
       <h3>🐣 Easter egg beloningen<span class="kitty-heart" data-secret="3">🤍</span></h3>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <span id="eeStatusLabel" style="font-size:.78rem;font-weight:600;color:var(--text2);">🔴 Easter eggs zijn nog niet gestart</span>
+        <button id="eeStartBtn" class="bonus-btn" style="background:linear-gradient(90deg,var(--teal),var(--mint));color:#fff;" onclick="setEEActive(true)">▶️ Start Easter eggs</button>
+        <button id="eeResetBtn" class="bonus-btn" style="background:#f5e6e6;color:#a00;border:1px solid #e0b0b0;display:none;" onclick="setEEActive(false)">🔄 Reset Easter eggs</button>
+      </div>
       <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Als een team een Easter egg meldt, duid hier aan welk team +1 punt krijgt.</p>
       <div class="ee-grid" id="eeGrid"></div>
     </div>
@@ -571,7 +576,7 @@ const WHEEL_COLORS=['#00c2d1','#00d9a8','#1a6bd4','#0090d0','#00a8bc','#00c499',
 const MEDALS=['🥇','🥈','🥉'];
 
 // ── STATE ─────────────────────────────────────────────────────────
-let S = { teams:[], challengeHist:[], bonusHist:[], eggs:{}, easterEggs:{}, savedGames:[] };
+let S = { teams:[], challengeHist:[], bonusHist:[], eggs:{}, easterEggs:{}, savedGames:[], eeActive:false };
 let session = null;   // {session_id, username}
 let pendingCb = null;
 let spinning = false, rot = 0;
@@ -580,14 +585,16 @@ const clickCounts = {};
 
 // ── SUPABASE LOAD ─────────────────────────────────────────────────
 async function loadState() {
+  if(demoMode){renderAll();return;} // demo modus: nooit echte data ophalen
   try {
-    const [t, ch, bh, e, ee, sg] = await Promise.all([
+    const [t, ch, bh, e, ee, sg, cfg] = await Promise.all([
       sb.from('ha_teams').select('*').order('updated_at',{ascending:false}),
       sb.from('ha_challenge_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_bonus_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_eggs').select('*'),
       sb.from('ha_easter_eggs').select('*').order('idx'),
-      sb.from('ha_saved_games').select('*').order('created_at',{ascending:false})
+      sb.from('ha_saved_games').select('*').order('created_at',{ascending:false}),
+      sb.from('ha_config').select('*')
     ]);
     S.teams = t.data || [];
     S.challengeHist = ch.data || [];
@@ -597,6 +604,7 @@ async function loadState() {
     S.easterEggs = {};
     (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to});
     S.savedGames = sg.data || [];
+    S.eeActive = (cfg.data||[]).find(r=>r.key==='ee_active')?.value === 'true';
     renderAll();
   } catch(err) {
     console.warn('loadState error', err);
@@ -611,6 +619,7 @@ function setupRealtime() {
     .on('postgres_changes',{event:'*',schema:'public',table:'ha_bonus_hist'},()=>loadState())
     .on('postgres_changes',{event:'*',schema:'public',table:'ha_eggs'},      ()=>loadState())
     .on('postgres_changes',{event:'*',schema:'public',table:'ha_easter_eggs'},()=>loadState())
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_config'},()=>loadState())
     .subscribe();
 }
 
@@ -708,6 +717,8 @@ function trackClick(id, threshold, eeIdx) {
 }
 
 async function triggerEE(idx) {
+  // Niet activeren als easter eggs nog niet gestart zijn
+  if(!S.eeActive) return;
   // Niet activeren als al toegekend aan een team
   if(S.easterEggs[idx]?.awarded_to) return;
   // Always show popup — content fetched from server (not in HTML!)
@@ -897,7 +908,14 @@ async function recordWinner(winner) {
     document.getElementById('overrideBox').style.display='none';
     document.getElementById('winnerSection').style.display='none';
     toast(`✅ ${winner} wint de uitdaging!`);
-    await loadState();
+    if(demoMode){
+      // Lokaal de demo-state bijwerken zonder Supabase te raken
+      const t=S.teams.find(x=>x.name===winner);if(t)t.points+=3;
+      S.challengeHist.unshift({team1:currentCh.c1,team2:currentCh.c2,winner,challenge_name:CHS[currentCh.idx].n,created_at:new Date().toISOString()});
+      renderAll();
+    } else {
+      await loadState();
+    }
   } catch(e){ toast('❌ '+e.message); requireJury(()=>recordWinner(winner)); }
 }
 
@@ -908,6 +926,18 @@ function renderAll(){
   renderHistory();
   renderWheelTeams();
   renderAdmin();
+  // EE zichtbaarheid syncen
+  const eeRule=document.getElementById('eeRuleCard');
+  if(eeRule) eeRule.style.display=S.eeActive?'':'none';
+  const eeRow=document.getElementById('eePointsRow');
+  if(eeRow) eeRow.style.display=S.eeActive?'':'none';
+  // Jury EE start/reset knop updaten
+  const eeStartBtn=document.getElementById('eeStartBtn');
+  const eeResetBtn=document.getElementById('eeResetBtn');
+  const eeStatusLabel=document.getElementById('eeStatusLabel');
+  if(eeStartBtn) eeStartBtn.style.display=S.eeActive?'none':'';
+  if(eeResetBtn) eeResetBtn.style.display=S.eeActive?'':'none';
+  if(eeStatusLabel) eeStatusLabel.textContent=S.eeActive?'🟢 Easter eggs zijn actief':'🔴 Easter eggs zijn nog niet gestart';
 }
 
 function renderNavStatus(){
@@ -921,9 +951,10 @@ function renderLeaderboard(){
   const maxPts=ranked.length?Math.max(1,totalPts(ranked[0])):1;
   const el=document.getElementById('lbList');
   if(!el)return;
-  // EE found counter
+  // EE found counter (alleen tonen als easter eggs actief zijn)
   const eeBar=document.getElementById('eeFoundBar');
   if(eeBar){
+    if(!S.eeActive){eeBar.innerHTML='';} else {
     const total=Object.keys(S.easterEggs).length||20;
     const found=Object.values(S.easterEggs).filter(e=>e.found).length;
     const pct=Math.round(found/total*100);
@@ -933,6 +964,7 @@ function renderLeaderboard(){
         <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--teal),var(--mint));border-radius:99px;transition:width .6s;"></div>
       </div>
     </div>`;
+    } // end eeActive check
   }
   if(!ranked.length){el.innerHTML='<div class="loading-msg">Nog geen teams geladen…</div>';return;}
   el.innerHTML=ranked.map((t,i)=>{
@@ -1203,6 +1235,19 @@ function renderEEAdmin(){
   }).join('');
 }
 function toggleHint(i){const el=document.getElementById('ee-hint-'+i);if(el)el.style.display=el.style.display==='none'?'block':'none';}
+
+async function setEEActive(active){
+  if(!active && !confirm('Easter eggs resetten? Alle gevonden eggs en toegekende punten worden gewist.')) return;
+  try {
+    await fetch(`${FN}/set-ee-active`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Session-ID':session?.id||''},
+      body: JSON.stringify({active})
+    });
+    toast(active ? '▶️ Easter eggs gestart!' : '🔄 Easter eggs gereset!');
+    await loadState();
+  } catch(e){ toast('❌ '+e.message); }
+}
 
 async function awardEE(idx){
   const team=document.getElementById(`ee-sel-${idx}`)?.value;
