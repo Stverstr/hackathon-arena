@@ -333,7 +333,7 @@ select:focus{border-color:var(--teal);outline:none;}
       <div class="rule-card"><div class="bg-n">2</div><div class="ic">🎡</div><h3>Rad van Fortuin</h3><p>De jury draait het rad — het lot kiest het spelletje. Geen excuses achteraf!</p></div>
       <div class="rule-card"><div class="bg-n">3</div><div class="ic">👨‍⚖️</div><h3>Jury beslist</h3><p>Beide teams doen het spelletje live. De jury bepaalt wie wint.</p></div>
       <div class="rule-card"><div class="bg-n">4</div><div class="ic">🏅</div><h3>Punten</h3><p>Winnen = <strong>+3 punten</strong>. Verliezen = 0. Elk team kan <strong>max. 10 uitdagingen</strong> starten.</p></div>
-      <div class="rule-card"><div class="bg-n">5</div><div class="ic">🥚</div><h3>Het Ei</h3><p>Elk team krijgt een ei. Houd het in leven = <strong>+6 punten</strong>. Je mag andermans ei stukmaken. Personaliseer je ei!</p></div>
+      <div class="rule-card"><div class="bg-n">5</div><div class="ic">🥚</div><h3>Het Ei</h3><p>Elk team krijgt een ei. Houd het in leven = <strong>+6 punten</strong>. Je mag andermans ei stukmaken. Personaliseer je ei!<br><br>⚠️ <strong>Het ei moet ten alle tijde zichtbaar zijn voor iedereen.</strong></p></div>
       <div class="rule-card"><div class="bg-n">6</div><div class="ic">🐣</div><h3>Easter Eggs</h3><p>Er zijn <strong>20 verborgen Easter eggs</strong> in deze app. Eerste vinder = <strong>+1 punt</strong>. Meld het aan de jury!</p></div>
     </div>
     <div class="divider"></div>
@@ -1039,7 +1039,38 @@ function renderHistory(){
 
 function renderWheelTeams(){
   const opts=S.teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
-  ['sel1','sel2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=`<option value="">— Selecteer team —</option>${opts}`;});
+  const s1=document.getElementById('sel1');
+  const s2=document.getElementById('sel2');
+  if(s1){s1.innerHTML=`<option value="">— Selecteer team —</option>${opts}`;s1.onchange=()=>filterSel2(s1.value);}
+  if(s2) s2.innerHTML=`<option value="">— Selecteer team —</option>${opts}`;
+}
+
+function filterSel2(c1){
+  const s2=document.getElementById('sel2');
+  if(!s2) return;
+  if(!c1){
+    const opts=S.teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
+    s2.innerHTML=`<option value="">— Selecteer team —</option>${opts}`;
+    return;
+  }
+  const ranked=[...S.teams].sort((x,y)=>totalPts(y)-totalPts(x));
+  const pa=ranked.findIndex(t=>t.name===c1);
+  const eligible=S.teams.filter(t=>{
+    const pb=ranked.findIndex(r=>r.name===t.name);
+    return t.name!==c1 && Math.abs(pa-pb)<=2 && challengeCount(t.name)<10 && challengeCount(c1)<10;
+  });
+  if(eligible.length===0){
+    s2.innerHTML=`<option value="">— Geen geschikte tegenstanders —</option>`;
+  } else {
+    const ranked2=eligible.sort((a,b)=>{
+      const ra=ranked.findIndex(r=>r.name===a.name);
+      const rb=ranked.findIndex(r=>r.name===b.name);
+      return ra-rb;
+    });
+    s2.innerHTML=`<option value="">— Selecteer tegenstander (±2) —</option>`+ranked2.map(t=>`<option value="${t.name}">#${ranked.findIndex(r=>r.name===t.name)+1} ${t.name}</option>`).join('');
+  }
+  s2.value='';
+  document.getElementById('msgErr').style.display='none';
 }
 
 function renderAdmin(){
