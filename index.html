@@ -583,12 +583,13 @@ let currentCh = {idx:0,c1:'',c2:''};
 const clickCounts = {};
 
 // ── SUPABASE LOAD ─────────────────────────────────────────────────
-// Sequence counter: elke loadState-aanroep krijgt een uniek nummer.
-// Alleen de LAATSTE aanroep mag de state overschrijven → stale data van
-// trage parallelle fetches wordt genegeerd.
-let _lsSeq = 0;
+// Expliciete calls (vanuit mutaties) annuleren pending realtime-timers
+// zodat ze nooit door een achtergrondlading worden verstoord.
+// Er is geen seq-counter: elke call loopt altijd volledig door.
+let _rtTimer = null;
+
 async function loadState() {
-  const mySeq = ++_lsSeq;
+  clearTimeout(_rtTimer); // annuleer pending realtime-load als wij nu al bezig zijn
   try {
     const [t, ch, bh, e, ee, sg] = await Promise.all([
       sb.from('ha_teams').select('*').order('points',{ascending:false}),
@@ -598,8 +599,6 @@ async function loadState() {
       sb.from('ha_easter_eggs').select('*').order('idx'),
       sb.from('ha_saved_games').select('*').order('created_at',{ascending:false})
     ]);
-    // Verouderde aanroep? Negeer — een nieuwere is al onderweg of klaar.
-    if (mySeq !== _lsSeq) return;
     S.teams = t.data || [];
     S.challengeHist = ch.data || [];
     S.bonusHist = bh.data || [];
@@ -608,9 +607,7 @@ async function loadState() {
     S.easterEggs = {};
     (ee.data||[]).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to, found_at:r.found_at});
     S.savedGames = sg.data || [];
-    // Config apart ophalen zodat een fout hier de rest niet blokkeert
     const cfgRes = await sb.from('ha_config').select('*').catch(()=>({data:[]}));
-    if (mySeq !== _lsSeq) return; // nogmaals checken na tweede await
     S.eeActive = ((cfgRes.data)||[]).find(r=>r.key==='ee_active')?.value === 'true';
     renderAll();
   } catch(err) {
@@ -619,12 +616,12 @@ async function loadState() {
 }
 
 // ── REALTIME ──────────────────────────────────────────────────────
-// Debounce: meerdere gelijktijdige realtime-events samenvoegen tot
-// één loadState-aanroep na 300 ms rust.
-let _rtTimer = null;
+// Debounce: meerdere snelle events samenvoegen tot één aanroep.
+// Als een expliciete loadState al loopt, wordt deze timer vanzelf
+// gecanceld door die loadState zelf (clearTimeout bovenaan).
 function scheduleLoad() {
   clearTimeout(_rtTimer);
-  _rtTimer = setTimeout(loadState, 300);
+  _rtTimer = setTimeout(loadState, 400);
 }
 function setupRealtime() {
   sb.channel('ha-live')
