@@ -182,6 +182,9 @@ select:focus{border-color:var(--teal);outline:none;}
 .ee-award-btn{padding:5px 10px;border-radius:7px;background:rgba(0,217,168,.15);color:#007a50;border:1px solid rgba(0,217,168,.3);font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;}
 .ee-found-badge{font-size:.7rem;color:#007a50;font-weight:700;}
 .ee-awarded-badge{font-size:.7rem;color:var(--text2);}
+.ee-hint-btn{background:none;border:none;cursor:pointer;font-size:.85rem;padding:2px 4px;border-radius:5px;transition:background .15s;}
+.ee-hint-btn:hover{background:rgba(0,194,209,.12);}
+.ee-hint{font-size:.74rem;color:var(--navy);line-height:1.5;background:rgba(255,214,0,.12);border:1px solid rgba(255,180,0,.3);border-radius:7px;padding:7px 9px;margin-bottom:2px;}
 
 /* jury secrets */
 .secrets-toggle{width:100%;padding:11px;background:linear-gradient(135deg,#8b0057,#c0206f);border:none;border-radius:10px;color:#fff;font-size:.88rem;font-weight:700;cursor:pointer;font-family:'Lexend',sans-serif;margin-bottom:12px;}
@@ -326,6 +329,7 @@ select:focus{border-color:var(--teal);outline:none;}
 <div class="tab" id="tab-scorebord">
   <div class="lb-wrap">
     <div class="sec-title" style="justify-content:center;padding-top:20px;" id="lbTitle">🏆 Scorebord</div>
+    <div id="eeFoundBar" style="text-align:center;margin-bottom:12px;"></div>
     <div id="lbList"><div class="loading-msg">Scorebord laden…</div></div>
     <div class="divider"></div>
     <div class="sec-title" id="histTitle"><span>📜</span> Geschiedenis</div>
@@ -631,6 +635,28 @@ async function juryAction(type, data={}) {
 }
 
 // ── EASTER EGGS ───────────────────────────────────────────────────
+const EE_HINTS = [
+  '🖱️ Klik 5× op het <strong>HRlinkIT logo</strong> linksboven in de navigatie',
+  '🔺 Klik 6× op de <strong>driehoekige pijl</strong> boven het spinwiel',
+  '🎡 Klik 5× op het <strong>spinwiel</strong> zelf',
+  '🥇 Klik 5× op de <strong>🥇 medaille</strong> van de #1 op het scorebord',
+  '🟢 Klik 7× op het <strong>groene bolletje</strong> in de LIVE-pill — of 5× op de <strong>🥈 medaille</strong>',
+  '📝 Klik 5× op de <strong>ondertitel</strong> ("Vandaag coderen jullie niet alleen…") — of 5× op de <strong>🥉 medaille</strong>',
+  '🏆 Klik 4× op de <strong>"🏆 Scorebord" titel</strong> — of 5× op de <strong>medaille rank 4</strong>',
+  '💬 Klik 6× op de grote <strong>hoofdtitel</strong> "HRlinkIT Challenge Arena"',
+  '🔴 Klik 5× op de <strong>LIVE pill</strong> (de groene capsule, niet het bolletje)',
+  'ℹ️ Klik 3× op de <strong>"Info"</strong> knop in de navigatie',
+  '🏅 Klik 3× op de <strong>"Scorebord"</strong> knop in de navigatie',
+  '🎡 Klik 3× op de <strong>"Rad"</strong> knop in de navigatie',
+  '⚙️ Klik 3× op de <strong>"Jury"</strong> knop in de navigatie',
+  '🔢 Klik 4× op de <strong>puntenscore</strong> van een team op het scorebord',
+  '📜 Klik 3× op de <strong>"📜 Geschiedenis" titel</strong> op het scorebord',
+  '⌨️ Typ de <strong>Konami-code</strong>: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;">↑↑↓↓←→←→BA</code>',
+  '🥚 Klik 5× op de <strong>kleine hint-tekst</strong> naast "Ei-tracker" in het jurytabblad',
+  '🔒 <em style="color:var(--text2)">Trigger onbekend — ultra verborgen!</em>',
+  '🔒 <em style="color:var(--text2)">Trigger onbekend — ultra verborgen!</em>',
+  '🎡 Klik <strong>10× op het spinwiel</strong> (ga door na de 5× trigger!)',
+];
 const clickCts = {};
 function trackClick(id, threshold, eeIdx) {
   clickCts[id]=(clickCts[id]||0)+1;
@@ -843,6 +869,19 @@ function renderLeaderboard(){
   const maxPts=ranked.length?Math.max(1,totalPts(ranked[0])):1;
   const el=document.getElementById('lbList');
   if(!el)return;
+  // EE found counter
+  const eeBar=document.getElementById('eeFoundBar');
+  if(eeBar){
+    const total=Object.keys(S.easterEggs).length||20;
+    const found=Object.values(S.easterEggs).filter(e=>e.found).length;
+    const pct=Math.round(found/total*100);
+    eeBar.innerHTML=`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:5px;background:rgba(0,217,168,.08);border:1px solid rgba(0,217,168,.2);border-radius:10px;padding:8px 20px;">
+      <div style="font-size:.78rem;font-weight:700;color:var(--navy);">🥚 Easter eggs gevonden: <span style="color:var(--mint);">${found}</span> / ${total}</div>
+      <div style="width:180px;height:5px;background:var(--bg3);border-radius:99px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,var(--teal),var(--mint));border-radius:99px;transition:width .6s;"></div>
+      </div>
+    </div>`;
+  }
   if(!ranked.length){el.innerHTML='<div class="loading-msg">Nog geen teams geladen…</div>';return;}
   el.innerHTML=ranked.map((t,i)=>{
     const pts=totalPts(t),egg=S.eggs[t.name],bonPts=S.bonusHist.filter(h=>h.team===t.name).reduce((s,h)=>s+h.points,0),eePts=Object.values(S.easterEggs).filter(e=>e.awarded_to===t.name).length;
@@ -1009,13 +1048,22 @@ document.getElementById('bonusBtn').addEventListener('click',()=>{
 function renderEEAdmin(){
   const el=document.getElementById('eeGrid');if(!el)return;
   const teamOpts=S.teams.map(t=>`<option value="${t.n||t.name}">${t.n||t.name}</option>`).join('');
-  el.innerHTML=Object.entries(S.easterEggs).sort((a,b)=>a[0]-b[0]).map(([idx,ee])=>`
+  el.innerHTML=Object.entries(S.easterEggs).sort((a,b)=>a[0]-b[0]).map(([idx,ee])=>{
+    const i=parseInt(idx);
+    const hint=EE_HINTS[i]||'?';
+    return `
     <div class="ee-item${ee.found?' found':''}${ee.awarded_to?' awarded':''}">
-      <div class="ee-n">Easter egg ${parseInt(idx)+1}</div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="ee-n" style="flex:1;">Easter egg ${i+1}</div>
+        <button class="ee-hint-btn" onclick="toggleHint(${i})" title="Hoe vinden?">💡</button>
+      </div>
+      <div id="ee-hint-${i}" class="ee-hint" style="display:none;">${hint}</div>
       <div class="ee-lbl">${ee.awarded_to?`✅ Toegekend aan ${ee.awarded_to}`:ee.found?'🔍 Gevonden':'⏳ Nog niet gevonden'}</div>
       ${ee.found&&!ee.awarded_to&&session?`<div class="ee-award-row"><select id="ee-sel-${idx}">${teamOpts}</select><button class="ee-award-btn" onclick="awardEE(${idx})">+1 pt</button></div>`:''}
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
+function toggleHint(i){const el=document.getElementById('ee-hint-'+i);if(el)el.style.display=el.style.display==='none'?'block':'none';}
 
 async function awardEE(idx){
   const team=document.getElementById(`ee-sel-${idx}`)?.value;
