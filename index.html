@@ -583,16 +583,23 @@ let currentCh = {idx:0,c1:'',c2:''};
 const clickCounts = {};
 
 // ── SUPABASE LOAD ─────────────────────────────────────────────────
+// Sequence counter: elke loadState-aanroep krijgt een uniek nummer.
+// Alleen de LAATSTE aanroep mag de state overschrijven → stale data van
+// trage parallelle fetches wordt genegeerd.
+let _lsSeq = 0;
 async function loadState() {
+  const mySeq = ++_lsSeq;
   try {
     const [t, ch, bh, e, ee, sg] = await Promise.all([
-      sb.from('ha_teams').select('*').order('updated_at',{ascending:false}),
+      sb.from('ha_teams').select('*').order('points',{ascending:false}),
       sb.from('ha_challenge_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_bonus_hist').select('*').order('created_at',{ascending:false}),
       sb.from('ha_eggs').select('*'),
       sb.from('ha_easter_eggs').select('*').order('idx'),
       sb.from('ha_saved_games').select('*').order('created_at',{ascending:false})
     ]);
+    // Verouderde aanroep? Negeer — een nieuwere is al onderweg of klaar.
+    if (mySeq !== _lsSeq) return;
     S.teams = t.data || [];
     S.challengeHist = ch.data || [];
     S.bonusHist = bh.data || [];
@@ -603,6 +610,7 @@ async function loadState() {
     S.savedGames = sg.data || [];
     // Config apart ophalen zodat een fout hier de rest niet blokkeert
     const cfgRes = await sb.from('ha_config').select('*').catch(()=>({data:[]}));
+    if (mySeq !== _lsSeq) return; // nogmaals checken na tweede await
     S.eeActive = ((cfgRes.data)||[]).find(r=>r.key==='ee_active')?.value === 'true';
     renderAll();
   } catch(err) {
@@ -611,14 +619,21 @@ async function loadState() {
 }
 
 // ── REALTIME ──────────────────────────────────────────────────────
+// Debounce: meerdere gelijktijdige realtime-events samenvoegen tot
+// één loadState-aanroep na 300 ms rust.
+let _rtTimer = null;
+function scheduleLoad() {
+  clearTimeout(_rtTimer);
+  _rtTimer = setTimeout(loadState, 300);
+}
 function setupRealtime() {
   sb.channel('ha-live')
-    .on('postgres_changes',{event:'*',schema:'public',table:'ha_teams'},     ()=>loadState())
-    .on('postgres_changes',{event:'*',schema:'public',table:'ha_challenge_hist'}, ()=>loadState())
-    .on('postgres_changes',{event:'*',schema:'public',table:'ha_bonus_hist'},()=>loadState())
-    .on('postgres_changes',{event:'*',schema:'public',table:'ha_eggs'},      ()=>loadState())
-    .on('postgres_changes',{event:'*',schema:'public',table:'ha_easter_eggs'},()=>loadState())
-    .on('postgres_changes',{event:'*',schema:'public',table:'ha_config'},()=>loadState())
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_teams'},         scheduleLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_challenge_hist'}, scheduleLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_bonus_hist'},     scheduleLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_eggs'},           scheduleLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_easter_eggs'},    scheduleLoad)
+    .on('postgres_changes',{event:'*',schema:'public',table:'ha_config'},         scheduleLoad)
     .subscribe();
 }
 
@@ -1142,42 +1157,39 @@ function renderAdminTeams(){
     </div>`).join('');
 }
 
-let _addingTeam=false;
+let _teamBusy = false;
 async function addTeam(){
-  if(_addingTeam)return;
-  const n=document.getElementById('newName').value.trim();
-  const c=document.getElementById('newColor').value;
-  if(!n){toast('❌ Vul een teamnaam in.');return;}
-  _addingTeam=true;
-  const btn=document.querySelector('#addTeamRow .bonus-btn');
-  if(btn){btn.disabled=true;btn.textContent='⏳';}
+  if(_teamBusy) return;
+  const n = document.getElementById('newName').value.trim();
+  const c = document.getElementById('newColor').value;
+  if(!n){ toast('❌ Vul een teamnaam in.'); return; }
+  _teamBusy = true;
+  const btn = document.getElementById('addBtn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
   try{
-    await juryAction('add-team',{name:n,color:c});
+    await juryAction('add-team', {name:n, color:c});
     document.getElementById('newName').value='';
-    // Optimistisch tonen voor instant feedback
-    if(!S.teams.find(t=>t.name===n)) S.teams.unshift({name:n,color:c,points:0});
-    renderAll();
     toast(`✅ ${n} toegevoegd!`);
-    // Daarna syncen — awaited zodat geen race condition mogelijk is
-    try{await loadState();}catch(_){}
+    // Autoritatief laden — geen optimistische update, de DB is de bron
+    await loadState();
   }
-  catch(e){toast('❌ '+e.message);}
+  catch(e){ toast('❌ '+e.message); }
   finally{
-    _addingTeam=false;
-    if(btn){btn.disabled=false;btn.textContent='+ Team';}
+    _teamBusy = false;
+    if(btn){ btn.disabled=false; btn.textContent='+ Team'; }
   }
 }
 
 async function removeTeam(name){
-  if(!confirm(`Team "${name}" verwijderen?`))return;
+  if(_teamBusy) return;
+  if(!confirm(`Team "${name}" verwijderen?`)) return;
+  _teamBusy = true;
   try{
-    await juryAction('remove-team',{name});
+    await juryAction('remove-team', {name});
     toast(`🗑️ ${name} verwijderd.`);
-    // Optimistic update
-    S.teams=S.teams.filter(t=>t.name!==name);
-    renderAll();
-    loadState().catch(()=>{});
-  } catch(e){toast('❌ '+e.message);}
+    await loadState();
+  } catch(e){ toast('❌ '+e.message); }
+  finally{ _teamBusy = false; }
 }
 
 function renderEggAdmin(){
@@ -1254,6 +1266,9 @@ function toggleHint(i){const el=document.getElementById('ee-hint-'+i);if(el)el.s
 function setEEActive(active){
   requireJury(async()=>{
     if(!active && !confirm('Easter eggs resetten? Alle gevonden eggs en toegekende punten worden gewist.')) return;
+    // Meteen UI updaten voor instant feedback
+    S.eeActive = active;
+    renderAll();
     try {
       const res = await fetch(`${FN}/set-ee-active`, {
         method:'POST',
@@ -1262,8 +1277,13 @@ function setEEActive(active){
       });
       if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Fout bij opslaan'); }
       toast(active ? '▶️ Easter eggs gestart!' : '🔄 Easter eggs gereset!');
-      await loadState();
-    } catch(e){ toast('❌ '+e.message); }
+      await loadState(); // bevestigen vanuit DB
+    } catch(e){
+      // Rollback UI bij fout
+      S.eeActive = !active;
+      renderAll();
+      toast('❌ '+e.message);
+    }
   });
 }
 
