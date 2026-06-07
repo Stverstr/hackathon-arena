@@ -703,6 +703,8 @@ function trackClick(id, threshold, eeIdx) {
 }
 
 async function triggerEE(idx) {
+  // Niet activeren als al toegekend aan een team
+  if(S.easterEggs[idx]?.awarded_to) return;
   // Always show popup — content fetched from server (not in HTML!)
   document.getElementById('eeBig').textContent='🥚';
   document.getElementById('eeTitle').textContent='Easter egg gevonden!';
