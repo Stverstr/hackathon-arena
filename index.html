@@ -1156,14 +1156,28 @@ async function addTeam(){
   const n=document.getElementById('newName').value.trim();
   const c=document.getElementById('newColor').value;
   if(!n){toast('❌ Vul een teamnaam in.');return;}
-  try{await juryAction('add-team',{name:n,color:c});document.getElementById('newName').value='';toast(`✅ ${n} toegevoegd!`);await loadState();}
+  try{
+    await juryAction('add-team',{name:n,color:c});
+    document.getElementById('newName').value='';
+    toast(`✅ ${n} toegevoegd!`);
+    // Optimistic update: meteen tonen zonder op Supabase te wachten
+    if(!S.teams.find(t=>t.name===n)) S.teams.unshift({name:n,color:c,points:0});
+    renderAll();
+    loadState().catch(()=>{}); // achtergrond sync
+  }
   catch(e){toast('❌ '+e.message);}
 }
 
 async function removeTeam(name){
   if(!confirm(`Team "${name}" verwijderen?`))return;
-  try{await juryAction('remove-team',{name});toast(`🗑️ ${name} verwijderd.`);await loadState();}
-  catch(e){toast('❌ '+e.message);}
+  try{
+    await juryAction('remove-team',{name});
+    toast(`🗑️ ${name} verwijderd.`);
+    // Optimistic update
+    S.teams=S.teams.filter(t=>t.name!==name);
+    renderAll();
+    loadState().catch(()=>{});
+  } catch(e){toast('❌ '+e.message);}
 }
 
 function renderEggAdmin(){
