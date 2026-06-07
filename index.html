@@ -315,7 +315,6 @@ select:focus{border-color:var(--teal);outline:none;}
   <button class="nav-btn" data-tab="scorebord">🏆 Scorebord</button>
   <button class="nav-btn" data-tab="wheel">🎡 Rad</button>
   <button class="nav-btn" data-tab="beheer">⚙️ Jury</button>
-  <button class="nav-btn" id="demoToggle" onclick="toggleDemo()" style="color:var(--mint);font-weight:700;">🎮 Demo</button>
   <div class="nav-status" id="navStatus" onclick="navStatusClick()">🔒 Jury</div>
 </nav>
 
@@ -585,7 +584,6 @@ const clickCounts = {};
 
 // ── SUPABASE LOAD ─────────────────────────────────────────────────
 async function loadState() {
-  if(demoMode){renderAll();return;} // demo modus: nooit echte data ophalen
   try {
     const [t, ch, bh, e, ee, sg] = await Promise.all([
       sb.from('ha_teams').select('*').order('updated_at',{ascending:false}),
@@ -676,7 +674,6 @@ function navStatusClick() {
 // ── JURY ACTION ───────────────────────────────────────────────────
 async function juryAction(type, data={}) {
   if (!session) throw new Error('Niet ingelogd als jury.');
-  if (demoMode) { toast('ℹ️ Demo modus — wijzigingen worden niet opgeslagen.'); return {ok:true}; }
   const res = await fetch(`${FN}/jury-action`,{
     method:'POST',
     headers:{'Content-Type':'application/json','X-Session-ID':session.session_id},
@@ -760,7 +757,7 @@ document.getElementById('eggEeHint').addEventListener('click',()=>trackClick('eg
 
 // Nav buttons (3× each → EE 9-12)
 document.querySelectorAll('.nav-btn').forEach((btn,i)=>{
-  const eeMap=[9,10,11,12,undefined]; // 5 knoppen: Info,Scorebord,Rad,Jury,Demo (Demo heeft geen EE)
+  const eeMap=[9,10,11,12]; // 4 knoppen: Info, Scorebord, Rad, Jury
   if(eeMap[i]!==undefined) btn.addEventListener('click',()=>trackClick('nav-'+i,3,eeMap[i]));
 });
 
@@ -909,14 +906,7 @@ async function recordWinner(winner) {
     document.getElementById('overrideBox').style.display='none';
     document.getElementById('winnerSection').style.display='none';
     toast(`✅ ${winner} wint de uitdaging!`);
-    if(demoMode){
-      // Lokaal de demo-state bijwerken zonder Supabase te raken
-      const t=S.teams.find(x=>x.name===winner);if(t)t.points+=3;
-      S.challengeHist.unshift({team1:currentCh.c1,team2:currentCh.c2,winner,challenge_name:CHS[currentCh.idx].n,created_at:new Date().toISOString()});
-      renderAll();
-    } else {
-      await loadState();
-    }
+    await loadState();
   } catch(e){ toast('❌ '+e.message); requireJury(()=>recordWinner(winner)); }
 }
 
@@ -1152,20 +1142,30 @@ function renderAdminTeams(){
     </div>`).join('');
 }
 
+let _addingTeam=false;
 async function addTeam(){
+  if(_addingTeam)return;
   const n=document.getElementById('newName').value.trim();
   const c=document.getElementById('newColor').value;
   if(!n){toast('❌ Vul een teamnaam in.');return;}
+  _addingTeam=true;
+  const btn=document.querySelector('#addTeamRow .bonus-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳';}
   try{
     await juryAction('add-team',{name:n,color:c});
     document.getElementById('newName').value='';
-    toast(`✅ ${n} toegevoegd!`);
-    // Optimistic update: meteen tonen zonder op Supabase te wachten
+    // Optimistisch tonen voor instant feedback
     if(!S.teams.find(t=>t.name===n)) S.teams.unshift({name:n,color:c,points:0});
     renderAll();
-    loadState().catch(()=>{}); // achtergrond sync
+    toast(`✅ ${n} toegevoegd!`);
+    // Daarna syncen — awaited zodat geen race condition mogelijk is
+    try{await loadState();}catch(_){}
   }
   catch(e){toast('❌ '+e.message);}
+  finally{
+    _addingTeam=false;
+    if(btn){btn.disabled=false;btn.textContent='+ Team';}
+  }
 }
 
 async function removeTeam(name){
@@ -1516,60 +1516,6 @@ function toast(msg){
   setTimeout(()=>el.classList.remove('show'),3200);
 }
 
-// ── DEMO MODUS ────────────────────────────────────────────────────
-const DEMO_STATE = {
-  teams:[
-    {name:'Team Alpha',  color:'#00c2d1', points:9},
-    {name:'Team Beta',   color:'#00d9a8', points:9},
-    {name:'Team Gamma',  color:'#1a2160', points:3},
-    {name:'Team Delta',  color:'#0082c0', points:6},
-    {name:'Team Epsilon',color:'#7b61ff', points:0},
-  ],
-  challengeHist:[
-    {team1:'Team Alpha',team2:'Team Beta',winner:'Team Alpha',challenge_name:'Papierbal basketbal',created_at:new Date(Date.now()-3600000).toISOString()},
-    {team1:'Team Gamma',team2:'Team Delta',winner:'Team Delta',challenge_name:'Post-it origami race',created_at:new Date(Date.now()-7200000).toISOString()},
-    {team1:'Team Alpha',team2:'Team Epsilon',winner:'Team Alpha',challenge_name:'Blindfolded tekenen',created_at:new Date(Date.now()-1800000).toISOString()},
-    {team1:'Team Beta',team2:'Team Gamma',winner:'Team Beta',challenge_name:'Snelste typerace',created_at:new Date(Date.now()-900000).toISOString()},
-  ],
-  bonusHist:[
-    {team:'Team Beta',  points:3, comment:'Snelste oplossing van de dag', created_at:new Date(Date.now()-5400000).toISOString()},
-    {team:'Team Delta', points:2, comment:'Beste teamwork', created_at:new Date(Date.now()-3000000).toISOString()},
-    {team:'Team Gamma', points:-1,comment:'Te laat teruggekomen van pauze',created_at:new Date(Date.now()-2700000).toISOString()},
-  ],
-  eggs:{
-    'Team Alpha':  {alive:true, name:'Zonnebloem'},
-    'Team Beta':   {alive:false,name:'Kabouter'},
-    'Team Gamma':  {alive:true, name:''},
-    'Team Delta':  {alive:true, name:'Draco'},
-    'Team Epsilon':{alive:true, name:''},
-  },
-  easterEggs: Object.fromEntries([...Array(20)].map((_,i)=>[i,
-    i===0?{found:true, awarded_to:'Team Alpha'}:
-    i===1?{found:true, awarded_to:'Team Beta'}:
-    i===4?{found:true, awarded_to:''}:
-    {found:false,awarded_to:''}
-  ])),
-  savedGames:[],
-  eeActive: true,
-};
-
-let demoMode=false, realS=null, realSession=null;
-function toggleDemo(){
-  demoMode=!demoMode;
-  const btn=document.getElementById('demoToggle');
-  if(demoMode){
-    realS=JSON.parse(JSON.stringify(S));realSession=session;
-    S=JSON.parse(JSON.stringify(DEMO_STATE));
-    session={session_id:'demo',username:'demo'};
-    btn.textContent='🔴 Live';btn.style.color='#c02020';
-    toast('🎮 Demo modus — nep data actief');
-  } else {
-    S=realS||S;session=realSession;
-    btn.textContent='🎮 Demo';btn.style.color='var(--mint)';
-    toast('📡 Terug naar live data');
-  }
-  renderAll();
-}
 
 // ── AUTO-LOGIN (tijdelijk) ─────────────────────────────────────────
 async function autoJuryLogin(){
