@@ -421,7 +421,7 @@ select:focus{border-color:var(--teal);outline:none;}
 
     <!-- Teams -->
     <div class="admin-card">
-      <h3>👥 Teams<span class="kitty-heart" data-secret="0">🤍</span></h3>
+      <h3>👥 Teams <span id="teamCount" style="font-size:.72rem;font-weight:400;color:var(--text2);margin-left:4px"></span><span class="kitty-heart" data-secret="0">🤍</span></h3>
       <div class="team-rows" id="adminTeams"></div>
       <div class="add-row" id="addTeamRow" style="display:none">
         <input type="text" id="newName" placeholder="Teamnaam..." maxlength="24">
@@ -1144,6 +1144,7 @@ function renderAdminTeams(){
   const el=document.getElementById('adminTeams');const lm=document.getElementById('teamLockMsg');const ar=document.getElementById('addTeamRow');
   if(lm) lm.style.display=session?'none':'';
   if(ar) ar.style.display=session?'':'none';
+  const tc=document.getElementById('teamCount');if(tc)tc.textContent=`(${S.teams.length} in DB)`;
   if(!el)return;
   el.innerHTML=S.teams.map(t=>`
     <div class="team-row">
@@ -1162,13 +1163,13 @@ async function addTeam(){
   if(!n){ toast('❌ Vul een teamnaam in.'); return; }
   _teamBusy = true;
   const btn = document.getElementById('addBtn');
-  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Bezig...'; }
   try{
     await juryAction('add-team', {name:n, color:c});
     document.getElementById('newName').value='';
-    toast(`✅ ${n} toegevoegd!`);
-    // Autoritatief laden — geen optimistische update, de DB is de bron
+    // Eerst laden, DAN pas toast — zodat teams zichtbaar zijn als toast verschijnt
     await loadState();
+    toast(`✅ ${n} toegevoegd! (${S.teams.length} teams totaal)`);
   }
   catch(e){ toast('❌ '+e.message); }
   finally{
