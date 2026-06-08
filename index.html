@@ -739,6 +739,7 @@ const EE_HINTS = [
 const clickCts = {};
 function trackClick(id, threshold, eeIdx) {
   clickCts[id]=(clickCts[id]||0)+1;
+  console.log('[EE]', id, clickCts[id]+'/'+threshold, '→ idx', eeIdx);
   if(clickCts[id]>=threshold){clickCts[id]=0;triggerEE(eeIdx);}
 }
 
