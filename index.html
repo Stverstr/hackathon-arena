@@ -715,26 +715,26 @@ async function juryAction(type, data={}) {
 
 // ── EASTER EGGS ───────────────────────────────────────────────────
 const EE_HINTS = [
-  '🖱️ Klik <strong>15×</strong> op het <strong>HRlinkIT logo</strong> linksboven in de navigatie',
-  '🔺 Klik <strong>12×</strong> op de <strong>driehoekige pijl</strong> boven het spinwiel',
-  '🎡 Klik <strong>12×</strong> op het <strong>spinwiel</strong> zelf',
-  '🔒 Klik <strong>10×</strong> op de <strong>"🔒 Jury" status-knop</strong> rechtsboven in de navigatie',
-  '🟢 Klik <strong>15×</strong> op het <strong>groene bolletje</strong> in de LIVE-pill',
-  '📝 Klik <strong>15×</strong> op de <strong>ondertitel</strong> ("Vandaag coderen jullie niet alleen…")',
-  '💬 Klik <strong>12×</strong> op de grote <strong>hoofdtitel</strong> "HRlinkIT Challenge Arena"',
-  '🔴 Klik <strong>12×</strong> op de <strong>LIVE pill</strong> (de groene capsule, niet het bolletje)',
-  '🐣 Klik <strong>8×</strong> op de <strong>"🐣 Easter Eggs" regelkaart</strong> in het Info-tabblad',
-  'ℹ️ Klik <strong>10×</strong> op de <strong>"Info"</strong> knop in de navigatie',
-  '🏅 Klik <strong>10×</strong> op de <strong>"Scorebord"</strong> knop in de navigatie',
-  '🎡 Klik <strong>10×</strong> op de <strong>"Rad"</strong> knop in de navigatie',
-  '⚙️ Klik <strong>10×</strong> op de <strong>"Jury"</strong> knop in de navigatie',
-  '🔢 Klik <strong>12×</strong> op de <strong>"🏆 Scorebord" titel</strong> op het scorebord-tabblad',
-  '📊 Klik <strong>10×</strong> op de <strong>"📊 Puntenoverzicht" titel</strong> op het scorebord-tabblad',
+  '🖱️ Klik <strong>8×</strong> op het <strong>HRlinkIT logo</strong> linksboven in de navigatie',
+  '🔺 Klik <strong>7×</strong> op de <strong>driehoekige pijl</strong> boven het spinwiel',
+  '🎡 Klik <strong>6×</strong> op het <strong>spinwiel</strong> zelf',
+  '🔒 Klik <strong>6×</strong> op de <strong>"🔒 Jury" status-knop</strong> rechtsboven in de navigatie',
+  '🟢 Klik <strong>8×</strong> op het <strong>groene bolletje</strong> in de LIVE-pill',
+  '📝 Klik <strong>7×</strong> op de <strong>ondertitel</strong> ("Vandaag coderen jullie niet alleen…")',
+  '💬 Klik <strong>7×</strong> op de grote <strong>hoofdtitel</strong> "HRlinkIT Challenge Arena"',
+  '🔴 Klik <strong>7×</strong> op de <strong>LIVE pill</strong> (de groene capsule, niet het bolletje)',
+  '🐣 Klik <strong>5×</strong> op de <strong>"🐣 Easter Eggs" regelkaart</strong> in het Info-tabblad',
+  'ℹ️ Klik <strong>6×</strong> op de <strong>"Info"</strong> knop in de navigatie',
+  '🏅 Klik <strong>6×</strong> op de <strong>"Scorebord"</strong> knop in de navigatie',
+  '🎡 Klik <strong>6×</strong> op de <strong>"Rad"</strong> knop in de navigatie',
+  '⚙️ Klik <strong>6×</strong> op de <strong>"Jury"</strong> knop in de navigatie',
+  '🔢 Klik <strong>7×</strong> op de <strong>"🏆 Scorebord" titel</strong> op het scorebord-tabblad',
+  '📊 Klik <strong>6×</strong> op de <strong>"📊 Puntenoverzicht" titel</strong> op het scorebord-tabblad',
   '⌨️ Typ het woord <strong>SPAARVARKEN</strong> op het toetsenbord (hoofdlettergevoelig, geen spaties)',
-  '🥚 Klik <strong>15×</strong> op de <strong>kleine hint-tekst</strong> naast "Ei-tracker" in het jurytabblad',
+  '🥚 Klik <strong>8×</strong> op de <strong>kleine hint-tekst</strong> naast "Ei-tracker" in het jurytabblad',
   '🔒 <em style="color:var(--text2)">Trigger onbekend — ultra verborgen!</em>',
   '🔒 <em style="color:var(--text2)">Trigger onbekend — ultra verborgen!</em>',
-  '🎡 Klik <strong>20×</strong> op het <strong>spinwiel</strong> (ga door na de 12× trigger!)',
+  '🎡 Klik <strong>12×</strong> op het <strong>spinwiel</strong> (ga door na de 6× trigger!)',
 ];
 const clickCts = {};
 function trackClick(id, threshold, eeIdx) {
@@ -746,7 +746,7 @@ async function triggerEE(idx) {
   // Niet activeren als easter eggs nog niet gestart zijn
   if(!S.eeActive) return;
   // Niet activeren als al toegekend aan een team
-  if(S.easterEggs[idx]?.awarded_to) return;
+  if(Array.isArray(S.easterEggs[idx]?.awarded_to)&&S.easterEggs[idx].awarded_to.length>0) return;
   // Always show popup — content fetched from server (not in HTML!)
   document.getElementById('eeBig').textContent='🥚';
   document.getElementById('eeTitle').textContent='Easter egg gevonden!';
@@ -778,16 +778,16 @@ document.addEventListener('keydown',e=>{
 });
 
 // Click triggers for Easter eggs
-document.getElementById('navLogo').addEventListener('click',()=>trackClick('logo',15,0));
-document.getElementById('liveDot').addEventListener('click',()=>trackClick('dot',15,4));
-document.getElementById('livePill').addEventListener('click',()=>trackClick('livepill',12,7));
-document.getElementById('heroTitle').addEventListener('click',()=>trackClick('h1',12,6));
-document.getElementById('heroSub').addEventListener('click',()=>trackClick('hsub',15,5));
-document.getElementById('eggEeHint').addEventListener('click',()=>trackClick('eggHint',15,16));
-document.getElementById('navStatus').addEventListener('click',()=>trackClick('navst',10,3));
-document.getElementById('eeRuleCard').addEventListener('click',()=>trackClick('eerule',8,8));
-document.getElementById('lbTitle').addEventListener('click',()=>trackClick('lbt',12,13));
-document.getElementById('histTitle').addEventListener('click',()=>trackClick('hist',10,14));
+document.getElementById('navLogo').addEventListener('click',()=>trackClick('logo',8,0));
+document.getElementById('liveDot').addEventListener('click',()=>trackClick('dot',8,4));
+document.getElementById('livePill').addEventListener('click',()=>trackClick('livepill',7,7));
+document.getElementById('heroTitle').addEventListener('click',()=>trackClick('h1',7,6));
+document.getElementById('heroSub').addEventListener('click',()=>trackClick('hsub',7,5));
+document.getElementById('eggEeHint').addEventListener('click',()=>trackClick('eggHint',8,16));
+document.getElementById('navStatus').addEventListener('click',()=>trackClick('navst',6,3));
+document.getElementById('eeRuleCard').addEventListener('click',()=>trackClick('eerule',5,8));
+document.getElementById('lbTitle').addEventListener('click',()=>trackClick('lbt',7,13));
+document.getElementById('histTitle').addEventListener('click',()=>trackClick('hist',6,14));
 
 // Ultra verborgen: rechts-klikken op het spinwiel → EE #18 (idx 17)
 document.getElementById('wCanvas').addEventListener('contextmenu',e=>{e.preventDefault();triggerEE(17);});
@@ -797,7 +797,7 @@ document.getElementById('heroSub').addEventListener('dblclick',()=>triggerEE(18)
 // Nav buttons (10× each → EE 9-12)
 document.querySelectorAll('.nav-btn').forEach((btn,i)=>{
   const eeMap=[9,10,11,12]; // 4 knoppen: Info, Scorebord, Rad, Jury
-  if(eeMap[i]!==undefined) btn.addEventListener('click',()=>trackClick('nav-'+i,10,eeMap[i]));
+  if(eeMap[i]!==undefined) btn.addEventListener('click',()=>trackClick('nav-'+i,6,eeMap[i]));
 });
 
 // ── SCORING ───────────────────────────────────────────────────────
@@ -852,10 +852,10 @@ function drawWheel(r){
   ctx.font=`${Math.max(9,Math.floor(cx/9))}px sans-serif`;ctx.fillText('⚡',cx,cy);ctx.textBaseline='alphabetic';
 }
 
-document.getElementById('wheelPointer').addEventListener('click',()=>trackClick('ptr',12,1));
+document.getElementById('wheelPointer').addEventListener('click',()=>trackClick('ptr',7,1));
 document.getElementById('wCanvas').addEventListener('click',()=>{
-  trackClick('wcv',12,2);
-  trackClick('wcvBig',20,19); // EE #20 at 20 clicks
+  trackClick('wcv',6,2);
+  trackClick('wcvBig',12,19); // EE #20 at 12 clicks total
 });
 
 document.getElementById('spinBtn').addEventListener('click',()=>{
