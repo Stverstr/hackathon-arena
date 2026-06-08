@@ -195,7 +195,9 @@ select:focus{border-color:var(--teal);outline:none;}
 .ee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px;margin-bottom:10px;}
 .ee-item{background:var(--bg3);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
 .ee-item.found{background:rgba(0,217,168,.08);border:1px solid rgba(0,217,168,.25);}
-.ee-item.awarded{opacity:.6;}
+.ee-item.awarded{opacity:.85;}
+.ee-award-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(0,217,168,.12);border:1px solid rgba(0,217,168,.3);border-radius:6px;padding:2px 7px;font-size:.72rem;font-weight:700;color:#007a50;margin:1px 2px;}
+.ee-unaward-btn{background:none;border:none;cursor:pointer;font-size:.8rem;color:#c02020;padding:0 2px;line-height:1;font-weight:700;}
 .ee-item .ee-n{font-size:.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
 .ee-item .ee-lbl{font-size:.75rem;color:var(--text);line-height:1.4;}
 .ee-award-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
@@ -619,7 +621,7 @@ async function loadState() {
     S.eggs = {};
     (Array.isArray(eggs) ? eggs : []).forEach(r => S.eggs[r.team] = {alive:r.alive, name:r.egg_name});
     S.easterEggs = {};
-    (Array.isArray(easterEggs) ? easterEggs : []).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:r.awarded_to, found_at:r.found_at});
+    (Array.isArray(easterEggs) ? easterEggs : []).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:Array.isArray(r.awarded_to)?r.awarded_to:[], found_at:r.found_at});
     S.savedGames = Array.isArray(savedGames) ? savedGames : [];
     S.eeActive = (Array.isArray(cfg) ? cfg : []).find(r => r.key === 'ee_active')?.value === 'true';
     renderAll();
@@ -713,26 +715,26 @@ async function juryAction(type, data={}) {
 
 // ── EASTER EGGS ───────────────────────────────────────────────────
 const EE_HINTS = [
-  '🖱️ Klik 5× op het <strong>HRlinkIT logo</strong> linksboven in de navigatie',
-  '🔺 Klik 6× op de <strong>driehoekige pijl</strong> boven het spinwiel',
-  '🎡 Klik 5× op het <strong>spinwiel</strong> zelf',
-  '🥇 Klik 5× op de <strong>🥇 medaille</strong> van de #1 op het scorebord',
-  '🟢 Klik 7× op het <strong>groene bolletje</strong> in de LIVE-pill — of 5× op de <strong>🥈 medaille</strong>',
-  '📝 Klik 5× op de <strong>ondertitel</strong> ("Vandaag coderen jullie niet alleen…") — of 5× op de <strong>🥉 medaille</strong>',
-  '🏆 Klik 4× op de <strong>"🏆 Scorebord" titel</strong> — of 5× op de <strong>medaille rank 4</strong>',
-  '💬 Klik 6× op de grote <strong>hoofdtitel</strong> "HRlinkIT Challenge Arena"',
-  '🔴 Klik 5× op de <strong>LIVE pill</strong> (de groene capsule, niet het bolletje)',
-  'ℹ️ Klik 3× op de <strong>"Info"</strong> knop in de navigatie',
-  '🏅 Klik 3× op de <strong>"Scorebord"</strong> knop in de navigatie',
-  '🎡 Klik 3× op de <strong>"Rad"</strong> knop in de navigatie',
-  '⚙️ Klik 3× op de <strong>"Jury"</strong> knop in de navigatie',
-  '🔢 Klik 4× op de <strong>puntenscore</strong> van een team op het scorebord',
-  '📜 Klik 3× op de <strong>"📜 Geschiedenis" titel</strong> op het scorebord',
-  '⌨️ Typ de <strong>Konami-code</strong>: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px;">↑↑↓↓←→←→BA</code>',
-  '🥚 Klik 5× op de <strong>kleine hint-tekst</strong> naast "Ei-tracker" in het jurytabblad',
+  '🖱️ Klik <strong>15×</strong> op het <strong>HRlinkIT logo</strong> linksboven in de navigatie',
+  '🔺 Klik <strong>12×</strong> op de <strong>driehoekige pijl</strong> boven het spinwiel',
+  '🎡 Klik <strong>12×</strong> op het <strong>spinwiel</strong> zelf',
+  '🔒 Klik <strong>10×</strong> op de <strong>"🔒 Jury" status-knop</strong> rechtsboven in de navigatie',
+  '🟢 Klik <strong>15×</strong> op het <strong>groene bolletje</strong> in de LIVE-pill',
+  '📝 Klik <strong>15×</strong> op de <strong>ondertitel</strong> ("Vandaag coderen jullie niet alleen…")',
+  '💬 Klik <strong>12×</strong> op de grote <strong>hoofdtitel</strong> "HRlinkIT Challenge Arena"',
+  '🔴 Klik <strong>12×</strong> op de <strong>LIVE pill</strong> (de groene capsule, niet het bolletje)',
+  '🐣 Klik <strong>8×</strong> op de <strong>"🐣 Easter Eggs" regelkaart</strong> in het Info-tabblad',
+  'ℹ️ Klik <strong>10×</strong> op de <strong>"Info"</strong> knop in de navigatie',
+  '🏅 Klik <strong>10×</strong> op de <strong>"Scorebord"</strong> knop in de navigatie',
+  '🎡 Klik <strong>10×</strong> op de <strong>"Rad"</strong> knop in de navigatie',
+  '⚙️ Klik <strong>10×</strong> op de <strong>"Jury"</strong> knop in de navigatie',
+  '🔢 Klik <strong>12×</strong> op de <strong>"🏆 Scorebord" titel</strong> op het scorebord-tabblad',
+  '📊 Klik <strong>10×</strong> op de <strong>"📊 Puntenoverzicht" titel</strong> op het scorebord-tabblad',
+  '⌨️ Typ het woord <strong>SPAARVARKEN</strong> op het toetsenbord (hoofdlettergevoelig, geen spaties)',
+  '🥚 Klik <strong>15×</strong> op de <strong>kleine hint-tekst</strong> naast "Ei-tracker" in het jurytabblad',
   '🔒 <em style="color:var(--text2)">Trigger onbekend — ultra verborgen!</em>',
   '🔒 <em style="color:var(--text2)">Trigger onbekend — ultra verborgen!</em>',
-  '🎡 Klik <strong>10× op het spinwiel</strong> (ga door na de 5× trigger!)',
+  '🎡 Klik <strong>20×</strong> op het <strong>spinwiel</strong> (ga door na de 12× trigger!)',
 ];
 const clickCts = {};
 function trackClick(id, threshold, eeIdx) {
@@ -761,37 +763,48 @@ async function triggerEE(idx) {
   } catch { document.getElementById('eeMsg').textContent='🐣 Meld dit aan de jury!'; }
   // Mark found in DB + optimistic local update so jury sees award selector immediately
   fetch(`${FN}/mark-ee-found`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idx})})
-    .then(()=>{if(!S.easterEggs[idx])S.easterEggs[idx]={};S.easterEggs[idx].found=true;renderEEAdmin();})
+    .then(()=>{if(!S.easterEggs[idx])S.easterEggs[idx]={found:false,awarded_to:[],found_at:null};S.easterEggs[idx].found=true;renderEEAdmin();})
     .catch(()=>{});
 }
 
-// Konami code → EE #16
-let konamiSeq=[];
-const KONAMI=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+// Typ "SPAARVARKEN" → EE #16 (idx 15)
+let eeTypedWord='';
 document.addEventListener('keydown',e=>{
-  konamiSeq.push(e.key);konamiSeq=konamiSeq.slice(-10);
-  if(JSON.stringify(konamiSeq)===JSON.stringify(KONAMI))triggerEE(15);
+  if(e.key.length===1){
+    eeTypedWord+=e.key.toUpperCase();
+    if(eeTypedWord.length>20) eeTypedWord=eeTypedWord.slice(-20);
+    if(eeTypedWord.includes('SPAARVARKEN')){eeTypedWord='';triggerEE(15);}
+  }
 });
 
 // Click triggers for Easter eggs
-document.getElementById('navLogo').addEventListener('click',()=>trackClick('logo',5,0));
-document.getElementById('liveDot').addEventListener('click',()=>trackClick('dot',7,4));
-document.getElementById('livePill').addEventListener('click',()=>trackClick('livepill',5,8));
-document.getElementById('heroTitle').addEventListener('click',()=>trackClick('h1',6,7));
-document.getElementById('heroSub').addEventListener('click',()=>trackClick('hsub',5,5));
-document.getElementById('eggEeHint').addEventListener('click',()=>trackClick('eggHint',5,16));
+document.getElementById('navLogo').addEventListener('click',()=>trackClick('logo',15,0));
+document.getElementById('liveDot').addEventListener('click',()=>trackClick('dot',15,4));
+document.getElementById('livePill').addEventListener('click',()=>trackClick('livepill',12,7));
+document.getElementById('heroTitle').addEventListener('click',()=>trackClick('h1',12,6));
+document.getElementById('heroSub').addEventListener('click',()=>trackClick('hsub',15,5));
+document.getElementById('eggEeHint').addEventListener('click',()=>trackClick('eggHint',15,16));
+document.getElementById('navStatus').addEventListener('click',()=>trackClick('navst',10,3));
+document.getElementById('eeRuleCard').addEventListener('click',()=>trackClick('eerule',8,8));
+document.getElementById('lbTitle').addEventListener('click',()=>trackClick('lbt',12,13));
+document.getElementById('histTitle').addEventListener('click',()=>trackClick('hist',10,14));
 
-// Nav buttons (3× each → EE 9-12)
+// Ultra verborgen: rechts-klikken op het spinwiel → EE #18 (idx 17)
+document.getElementById('wCanvas').addEventListener('contextmenu',e=>{e.preventDefault();triggerEE(17);});
+// Ultra verborgen: dubbelklik op de ondertitel → EE #19 (idx 18)
+document.getElementById('heroSub').addEventListener('dblclick',()=>triggerEE(18));
+
+// Nav buttons (10× each → EE 9-12)
 document.querySelectorAll('.nav-btn').forEach((btn,i)=>{
   const eeMap=[9,10,11,12]; // 4 knoppen: Info, Scorebord, Rad, Jury
-  if(eeMap[i]!==undefined) btn.addEventListener('click',()=>trackClick('nav-'+i,3,eeMap[i]));
+  if(eeMap[i]!==undefined) btn.addEventListener('click',()=>trackClick('nav-'+i,10,eeMap[i]));
 });
 
 // ── SCORING ───────────────────────────────────────────────────────
 function totalPts(team) {
   const egg = S.eggs[team.name]?.alive ? 6 : 0;
   const bonus = S.bonusHist.filter(h=>h.team===team.name).reduce((s,h)=>s+h.points,0);
-  const ee = Object.values(S.easterEggs).filter(e=>e.awarded_to===team.name).length;
+  const ee = Object.values(S.easterEggs).filter(e=>Array.isArray(e.awarded_to)&&e.awarded_to.includes(team.name)).length;
   return team.points + egg + bonus + ee;
 }
 
@@ -839,10 +852,10 @@ function drawWheel(r){
   ctx.font=`${Math.max(9,Math.floor(cx/9))}px sans-serif`;ctx.fillText('⚡',cx,cy);ctx.textBaseline='alphabetic';
 }
 
-document.getElementById('wheelPointer').addEventListener('click',()=>trackClick('ptr',6,1));
+document.getElementById('wheelPointer').addEventListener('click',()=>trackClick('ptr',12,1));
 document.getElementById('wCanvas').addEventListener('click',()=>{
-  trackClick('wcv',5,2);
-  trackClick('wcvBig',10,19); // EE #20 at 10 clicks
+  trackClick('wcv',12,2);
+  trackClick('wcvBig',20,19); // EE #20 at 20 clicks
 });
 
 document.getElementById('spinBtn').addEventListener('click',()=>{
@@ -997,7 +1010,7 @@ function renderLeaderboard(){
   }
   if(!ranked.length){el.innerHTML='<div class="loading-msg">Nog geen teams geladen…</div>';return;}
   el.innerHTML=ranked.map((t,i)=>{
-    const pts=totalPts(t),egg=S.eggs[t.name],bonPts=S.bonusHist.filter(h=>h.team===t.name).reduce((s,h)=>s+h.points,0),eePts=Object.values(S.easterEggs).filter(e=>e.awarded_to===t.name).length;
+    const pts=totalPts(t),egg=S.eggs[t.name],bonPts=S.bonusHist.filter(h=>h.team===t.name).reduce((s,h)=>s+h.points,0),eePts=Object.values(S.easterEggs).filter(e=>Array.isArray(e.awarded_to)&&e.awarded_to.includes(t.name)).length;
     const pct=Math.round(pts/maxPts*100);
     return `<div class="lb-card${i<3?' r'+(i+1):''}">
       <div class="lb-medal" data-medal="${i}">${MEDALS[i]||'#'+(i+1)}</div>
@@ -1015,11 +1028,7 @@ function renderLeaderboard(){
       <div class="lb-pts" data-lbpts="1">${pts}<div style="font-size:.62rem;color:var(--text2);font-weight:500">${t.points}+${egg?.alive?6:0}+${bonPts}+${eePts}</div></div>
     </div>`;
   }).join('');
-  // Attach EE click listeners
-  document.querySelectorAll('[data-medal]').forEach((el,i)=>el.addEventListener('click',()=>trackClick('medal-'+i,5,Math.min(i+3,6))));
-  document.querySelectorAll('[data-lbpts]').forEach(el=>el.addEventListener('click',()=>trackClick('lbpts',4,13)));
-  document.getElementById('lbTitle')?.addEventListener('click',()=>trackClick('lbt',4,6),{once:true});
-  document.getElementById('histTitle')?.addEventListener('click',()=>trackClick('hist',3,14),{once:true});
+  // EE click listeners now all static (no dynamic medal/lbpts triggers)
 }
 
 function fmtTime(iso){
@@ -1041,7 +1050,7 @@ function renderHistory(){
         const chPts=S.challengeHist.filter(h=>h.winner===t.name).length*3;
         const egPts=S.eggs[t.name]?.alive?6:0;
         const boPts=S.bonusHist.filter(h=>h.team===t.name).reduce((s,h)=>s+h.points,0);
-        const eePts=Object.values(S.easterEggs).filter(e=>e.awarded_to===t.name).length;
+        const eePts=Object.values(S.easterEggs).filter(e=>Array.isArray(e.awarded_to)&&e.awarded_to.includes(t.name)).length;
         const tot=totalPts(t);
         return `<div class="pt-team-row">
           <div class="pt-stripe" style="background:${t.color}"></div>
@@ -1072,9 +1081,11 @@ function renderHistory(){
       desc:h.comment||'Jurybeslissing',pts:h.points});
   });
   Object.entries(S.easterEggs).forEach(([idx,ee])=>{
-    if(ee.awarded_to){
-      events.push({ts:ee.found_at||null,team:ee.awarded_to,color:teamColor(ee.awarded_to),
-        icon:'🐣',desc:`Easter egg #${parseInt(idx)+1} gevonden`,pts:+1});
+    if(Array.isArray(ee.awarded_to)&&ee.awarded_to.length>0){
+      ee.awarded_to.forEach(team=>{
+        events.push({ts:ee.found_at||null,team,color:teamColor(team),
+          icon:'🐣',desc:`Easter egg #${parseInt(idx)+1} gevonden`,pts:+1});
+      });
     }
   });
 
@@ -1270,18 +1281,21 @@ document.getElementById('bonusBtn').addEventListener('click',()=>{
 function renderEEAdmin(){
   const el=document.getElementById('eeGrid');if(!el)return;
   const teamOpts=S.teams.map(t=>`<option value="${t.name}">${t.name}</option>`).join('');
-  // Toon altijd alle 20 easter eggs op jury-pagina (ook niet-gevonden)
   el.innerHTML=EE_HINTS.map((hint,i)=>{
-    const ee=S.easterEggs[i]||{found:false,awarded_to:null};
+    const ee=S.easterEggs[i]||{found:false,awarded_to:[]};
+    const awards=Array.isArray(ee.awarded_to)?ee.awarded_to:[];
+    const awardsHtml=awards.length>0
+      ? awards.map(t=>`<span class="ee-award-tag">✅ ${t}${session?` <button class="ee-unaward-btn" onclick="unawrdEE(${i},'${t.replace(/'/g,"\\'")}')">×</button>`:''}</span>`).join('')
+      : (ee.found?'🔍 Gevonden':'⏳ Nog niet gevonden');
     return `
-    <div class="ee-item${ee.found?' found':''}${ee.awarded_to?' awarded':''}">
+    <div class="ee-item${ee.found?' found':''}${awards.length>0?' awarded':''}">
       <div style="display:flex;align-items:center;gap:6px;">
         <div class="ee-n" style="flex:1;">Easter egg ${i+1}</div>
         <button class="ee-hint-btn" onclick="toggleHint(${i})" title="Hoe vinden?">💡</button>
       </div>
       <div id="ee-hint-${i}" class="ee-hint" style="display:none;">${hint}</div>
-      <div class="ee-lbl">${ee.awarded_to?`✅ Toegekend aan ${ee.awarded_to}`:ee.found?'🔍 Gevonden':'⏳ Nog niet gevonden'}</div>
-      ${ee.found&&!ee.awarded_to&&session?`<div class="ee-award-row"><select id="ee-sel-${i}">${teamOpts}</select><button class="ee-award-btn" onclick="awardEE(${i})">+1 pt</button></div>`:''}
+      <div class="ee-lbl">${awardsHtml}</div>
+      ${ee.found&&session?`<div class="ee-award-row"><select id="ee-sel-${i}">${teamOpts}</select><button class="ee-award-btn" onclick="awardEE(${i})">+1 pt</button></div>`:''}
     </div>`;
   }).join('');
 }
@@ -1314,7 +1328,27 @@ function setEEActive(active){
 async function awardEE(idx){
   const team=document.getElementById(`ee-sel-${idx}`)?.value;
   if(!team){toast('❌ Selecteer een team.');return;}
-  try{await juryAction('award-ee',{idx:parseInt(idx),team});toast(`🐣 +1 pt voor ${team}!`);await loadState();}
+  try{
+    await juryAction('award-ee',{idx:parseInt(idx),team});
+    toast(`🐣 +1 pt voor ${team}!`);
+    if(!S.easterEggs[idx])S.easterEggs[idx]={found:true,awarded_to:[],found_at:null};
+    if(!Array.isArray(S.easterEggs[idx].awarded_to))S.easterEggs[idx].awarded_to=[];
+    if(!S.easterEggs[idx].awarded_to.includes(team))S.easterEggs[idx].awarded_to.push(team);
+    renderEEAdmin();
+    await loadState();
+  }
+  catch(e){toast('❌ '+e.message);}
+}
+
+async function unawrdEE(idx,team){
+  try{
+    await juryAction('unaward-ee',{idx:parseInt(idx),team});
+    toast(`❌ Toekenning van ${team} verwijderd`);
+    if(Array.isArray(S.easterEggs[idx]?.awarded_to))
+      S.easterEggs[idx].awarded_to=S.easterEggs[idx].awarded_to.filter(t=>t!==team);
+    renderEEAdmin();
+    await loadState();
+  }
   catch(e){toast('❌ '+e.message);}
 }
 
