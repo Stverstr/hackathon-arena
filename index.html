@@ -739,7 +739,7 @@ const EE_HINTS = [
 const clickCts = {};
 function trackClick(id, threshold, eeIdx) {
   clickCts[id]=(clickCts[id]||0)+1;
-  console.log('[EE]', id, clickCts[id]+'/'+threshold, '→ idx', eeIdx);
+
   if(clickCts[id]>=threshold){clickCts[id]=0;triggerEE(eeIdx);}
 }
 
@@ -771,7 +771,7 @@ async function triggerEE(idx) {
 // Typ "SPAARVARKEN" → EE #16 (idx 15)
 let eeTypedWord='';
 document.addEventListener('keydown',e=>{
-  if(e.key.length===1){
+  if(e.key && e.key.length===1){
     eeTypedWord+=e.key.toUpperCase();
     if(eeTypedWord.length>20) eeTypedWord=eeTypedWord.slice(-20);
     if(eeTypedWord.includes('SPAARVARKEN')){eeTypedWord='';triggerEE(15);}
@@ -1020,7 +1020,7 @@ function renderLeaderboard(){
         <div class="lb-name">${t.name}</div>
         <div class="lb-sub">
           <span>⚔️ <strong>${challengeCount(t.name)}</strong> uitd.</span>
-          <span>🥚 <strong>${egg?.alive?'Leeft':'Kapot'}</strong></span>
+          <span>🥚 <strong>${egg?.alive?'Leeft':'Dood'}</strong>${egg?.name?` — ${egg.name}`:''}</span>
           ${bonPts!==0?`<span>🎖️ <strong>${bonPts>0?'+':''}${bonPts}</strong></span>`:''}
           ${eePts>0?`<span>🐣 <strong>×${eePts}</strong></span>`:''}
         </div>
