@@ -1556,19 +1556,9 @@ function toast(msg){
 }
 
 
-// ── AUTO-LOGIN (tijdelijk) ─────────────────────────────────────────
-async function autoJuryLogin(){
-  if(session)return;
-  try{
-    const r=await fetch(`${FN}/jury-login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'jury',password:'EverybodylovesKitty'})});
-    const d=await r.json();
-    if(d.session_id){session={session_id:d.session_id,username:d.username};renderAll();}
-  }catch(e){}
-}
-
 // ── INIT ──────────────────────────────────────────────────────────
 window.addEventListener('resize',()=>{if(document.getElementById('tab-wheel').classList.contains('active'))resizeCanvas();});
-loadState().then(async()=>{setupRealtime();resizeCanvas();await autoJuryLogin();});
+loadState().then(()=>{setupRealtime();resizeCanvas();});
 </script>
 </body>
 </html>
