@@ -400,7 +400,7 @@ select:focus{border-color:var(--teal);outline:none;}
           <select id="sel2"><option value="">— Selecteer team —</option></select>
           <div class="msg ok" id="msgOk"></div>
           <div class="msg err" id="msgErr"></div>
-          <button class="spin-btn" id="spinBtn">🎲 Draaien! (jury)</button>
+          <button class="spin-btn" id="spinBtn">🎲 Draaien!</button>
         </div>
       </div>
       <div class="wheel-col">
@@ -851,7 +851,7 @@ document.getElementById('spinBtn').addEventListener('click',()=>{
   if(!c1||!c2){showWheelErr('Selecteer eerst beide teams!');return;}
   const chk=canChallenge(c1,c2);
   if(!chk.ok){showWheelErr(chk.reason);return;}
-  requireJury(()=>doSpin(c1,c2));
+  doSpin(c1,c2); // Iedereen mag draaien — enkel winnaar registreren vereist jury
 });
 
 function showWheelErr(msg){
