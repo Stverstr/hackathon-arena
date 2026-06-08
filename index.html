@@ -314,7 +314,7 @@ select:focus{border-color:var(--teal);outline:none;}
   <button class="nav-btn active" data-tab="concept">🏠 Info</button>
   <button class="nav-btn" data-tab="scorebord">🏆 Scorebord</button>
   <button class="nav-btn" data-tab="wheel">🎡 Rad</button>
-  <button class="nav-btn" data-tab="beheer">⚙️ Jury</button>
+  <button class="nav-btn" data-tab="beheer" style="display:none">⚙️ Jury</button>
   <div class="nav-status" id="navStatus" onclick="navStatusClick()">🔒 Jury</div>
 </nav>
 
@@ -959,8 +959,20 @@ function renderAll(){
 
 function renderNavStatus(){
   const el=document.getElementById('navStatus');
-  if(session){el.textContent='🔓 '+session.username;el.className='nav-status logged-in';}
-  else{el.textContent='🔒 Jury';el.className='nav-status';}
+  const juryBtn=document.querySelector('.nav-btn[data-tab="beheer"]');
+  if(session){
+    el.textContent='🔓 '+session.username;
+    el.className='nav-status logged-in';
+    if(juryBtn) juryBtn.style.display='';
+  } else {
+    el.textContent='🔒 Jury';
+    el.className='nav-status';
+    if(juryBtn) juryBtn.style.display='none';
+    // Als jury-tab actief is, stuur terug naar Info
+    if(document.getElementById('tab-beheer')?.classList.contains('active')){
+      showTab('concept');
+    }
+  }
 }
 
 function renderLeaderboard(){
