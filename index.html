@@ -824,7 +824,7 @@ function totalPts(team) {
 }
 
 function challengeCount(name) {
-  return S.challengeHist.filter(h=>h.team1===name||h.team2===name).length;
+  return S.challengeHist.filter(h=>h.team1===name).length;
 }
 
 function canChallenge(a,b) {
