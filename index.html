@@ -333,7 +333,7 @@ select:focus{border-color:var(--teal);outline:none;}
       <div class="rule-card"><div class="bg-n">1</div><div class="ic">⚔️</div><h3>Uitdagen</h3><p>Je mag enkel een team uitdagen dat <strong>boven jou staat</strong> op het scorebord. Wie hoger staat heeft meer te verliezen!</p></div>
       <div class="rule-card"><div class="bg-n">2</div><div class="ic">🎡</div><h3>Rad van Fortuin</h3><p>De jury draait het rad — het lot kiest het spelletje. Geen excuses achteraf!</p></div>
       <div class="rule-card"><div class="bg-n">3</div><div class="ic">👨‍⚖️</div><h3>Jury beslist</h3><p>Beide teams doen het spelletje live. De jury bepaalt wie wint.</p></div>
-      <div class="rule-card"><div class="bg-n">4</div><div class="ic">🏅</div><h3>Punten</h3><p>Winnen = <strong>+3 punten</strong>. Verliezen = 0. Elk team kan <strong>max. 10 uitdagingen</strong> starten.</p></div>
+      <div class="rule-card"><div class="bg-n">4</div><div class="ic">🏅</div><h3>Punten</h3><p>Winnen = <strong>+3 punten</strong>. Verliezen = 0. Elk team kan <strong>max. <span id="ruleChallengeLimit">5</span> uitdagingen</strong> starten.</p></div>
       <div class="rule-card"><div class="bg-n">5</div><div class="ic">🥚</div><h3>Het Ei</h3><p>Elk team krijgt een ei. Houd het in leven = <strong>+6 punten</strong>. Je mag andermans ei stukmaken. Personaliseer je ei!<br><br>⚠️ <strong>Het ei moet ten alle tijde zichtbaar zijn voor iedereen.</strong></p></div>
       <div class="rule-card" id="eeRuleCard" style="display:none"><div class="bg-n">6</div><div class="ic">🐣</div><h3>Easter Eggs</h3><p>Er zijn <strong>20 verborgen Easter eggs</strong> in deze app. Eerste vinder = <strong>+1 punt</strong>. Meld het aan de jury!</p></div>
     </div>
@@ -467,6 +467,17 @@ select:focus{border-color:var(--teal);outline:none;}
       <div class="ee-grid" id="eeGrid"></div>
     </div>
 
+    <!-- Uitdagingen-limiet -->
+    <div class="admin-card" id="challLimitCard" style="display:none">
+      <h3>⚔️ Uitdagingen-limiet</h3>
+      <p style="font-size:.8rem;color:var(--text2);margin-bottom:12px;">Stel in hoeveel uitdagingen elk team maximaal mag spelen. Standaard 5.</p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <input type="number" id="challengeLimitInput" min="1" max="99" value="5" class="bonus-pts-input" style="width:72px;font-size:1rem;text-align:center;">
+        <button class="bonus-btn" onclick="saveChallengeLimit()">💾 Opslaan</button>
+        <span id="challLimitStatus" style="font-size:.78rem;color:var(--text2);"></span>
+      </div>
+    </div>
+
     <!-- Spelletjes (jury only) -->
     <div class="admin-card" id="chListCard" style="display:none">
       <h3>🎯 Spelletjeslijst<span class="kitty-heart" data-secret="4">🤍</span> <span style="font-size:.72rem;font-weight:500;color:var(--text2)">(enkel jury)</span></h3>
@@ -576,7 +587,7 @@ const WHEEL_COLORS=['#00c2d1','#00d9a8','#1a6bd4','#0090d0','#00a8bc','#00c499',
 const MEDALS=['🥇','🥈','🥉'];
 
 // ── STATE ─────────────────────────────────────────────────────────
-let S = { teams:[], challengeHist:[], bonusHist:[], eggs:{}, easterEggs:{}, savedGames:[], eeActive:false };
+let S = { teams:[], challengeHist:[], bonusHist:[], eggs:{}, easterEggs:{}, savedGames:[], eeActive:false, challengeLimit:5 };
 let session = null;   // {session_id, username}
 let pendingCb = null;
 let spinning = false, rot = 0;
@@ -623,7 +634,10 @@ async function loadState() {
     S.easterEggs = {};
     (Array.isArray(easterEggs) ? easterEggs : []).forEach(r => S.easterEggs[r.idx] = {found:!!r.found_at, awarded_to:Array.isArray(r.awarded_to)?r.awarded_to:[], found_at:r.found_at});
     S.savedGames = Array.isArray(savedGames) ? savedGames : [];
-    S.eeActive = (Array.isArray(cfg) ? cfg : []).find(r => r.key === 'ee_active')?.value === 'true';
+    const cfgArr = Array.isArray(cfg) ? cfg : [];
+    S.eeActive = cfgArr.find(r => r.key === 'ee_active')?.value === 'true';
+    const clRaw = cfgArr.find(r => r.key === 'challenge_limit')?.value;
+    S.challengeLimit = clRaw ? Math.max(1, parseInt(clRaw, 10)) : 5;
     renderAll();
   } catch(err) {
     console.warn('loadState error', err);
@@ -815,8 +829,8 @@ function challengeCount(name) {
 
 function canChallenge(a,b) {
   if(a===b) return {ok:false,reason:'Selecteer twee verschillende teams.'};
-  if(challengeCount(a)>=10) return {ok:false,reason:`${a} heeft al 10 uitdagingen gespeeld.`};
-  if(challengeCount(b)>=10) return {ok:false,reason:`${b} heeft al 10 uitdagingen gespeeld.`};
+  if(challengeCount(a)>=S.challengeLimit) return {ok:false,reason:`${a} heeft al ${S.challengeLimit} uitdagingen gespeeld.`};
+  if(challengeCount(b)>=S.challengeLimit) return {ok:false,reason:`${b} heeft al ${S.challengeLimit} uitdagingen gespeeld.`};
   const ranked=[...S.teams].sort((x,y)=>totalPts(y)-totalPts(x));
   const pa=ranked.findIndex(t=>t.name===a), pb=ranked.findIndex(t=>t.name===b);
   if(pb>=pa) return {ok:false,reason:`${a} kan ${b} niet uitdagen: je mag enkel teams uitdagen die boven jou staan.`};
@@ -969,6 +983,12 @@ function renderAll(){
   if(eeStartBtn) eeStartBtn.style.display=S.eeActive?'none':'';
   if(eeResetBtn) eeResetBtn.style.display=S.eeActive?'':'none';
   if(eeStatusLabel) eeStatusLabel.textContent=S.eeActive?'🟢 Easter eggs zijn actief':'🔴 Easter eggs zijn nog niet gestart';
+  // Challenge limit in regelkaart syncen
+  const ruleLimit=document.getElementById('ruleChallengeLimit');
+  if(ruleLimit) ruleLimit.textContent=S.challengeLimit;
+  // Challenge limit input syncen (jury panel)
+  const clInput=document.getElementById('challengeLimitInput');
+  if(clInput) clInput.value=S.challengeLimit;
 }
 
 function renderNavStatus(){
@@ -1019,7 +1039,7 @@ function renderLeaderboard(){
       <div class="lb-info">
         <div class="lb-name">${t.name}</div>
         <div class="lb-sub">
-          <span>⚔️ <strong>${challengeCount(t.name)}</strong> uitd.</span>
+          <span>⚔️ <strong>${challengeCount(t.name)}/${S.challengeLimit}</strong> uitd.</span>
           <span>🥚 <strong>${egg?.alive?'Leeft':'Dood'}</strong>${egg?.name?` — ${egg.name}`:''}</span>
           ${bonPts!==0?`<span>🎖️ <strong>${bonPts>0?'+':''}${bonPts}</strong></span>`:''}
           ${eePts>0?`<span>🐣 <strong>×${eePts}</strong></span>`:''}
@@ -1131,7 +1151,7 @@ function filterSel2(c1){
   const eligible=S.teams.filter(t=>{
     const pb=ranked.findIndex(r=>r.name===t.name);
     // Alleen teams die hoger gerangschikt zijn (lager index = beter)
-    return t.name!==c1 && pb<pa && challengeCount(t.name)<10 && challengeCount(c1)<10;
+    return t.name!==c1 && pb<pa && challengeCount(t.name)<S.challengeLimit && challengeCount(c1)<S.challengeLimit;
   });
   if(eligible.length===0){
     s2.innerHTML=`<option value="">— Geen geschikte tegenstanders —</option>`;
@@ -1155,7 +1175,7 @@ function renderAdmin(){
   renderEEAdmin();
   renderHistAdmin();
   // Show jury-only sections
-  const juryOnly=['chListCard','secretsCard','resetSection','spelbeheerCard'];
+  const juryOnly=['chListCard','secretsCard','resetSection','spelbeheerCard','challLimitCard'];
   juryOnly.forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=session?'':'none';});
   renderSavedGames();
   if(session && !document.getElementById('chList').innerHTML) renderChallengeList();
@@ -1189,7 +1209,7 @@ function renderAdminTeams(){
     <div class="team-row">
       <div class="dot2" style="background:${t.color}"></div>
       <div class="tn">${t.name}</div>
-      <div class="tp">⚔️ ${challengeCount(t.name)} uitd. · ${totalPts(t)} pts</div>
+      <div class="tp">⚔️ ${challengeCount(t.name)}/${S.challengeLimit} uitd. · ${totalPts(t)} pts</div>
       ${session?`<button class="rm-btn" onclick="removeTeam('${t.name}')">×</button>`:''}
     </div>`).join('');
 }
@@ -1323,6 +1343,22 @@ function setEEActive(active){
       renderAll();
       toast('❌ '+e.message);
     }
+  });
+}
+
+async function saveChallengeLimit(){
+  requireJury(async()=>{
+    const input=document.getElementById('challengeLimitInput');
+    const limit=Math.max(1,Math.min(99,parseInt(input?.value||'5',10)));
+    const statusEl=document.getElementById('challLimitStatus');
+    try{
+      await juryAction('set-challenge-limit',{limit});
+      S.challengeLimit=limit;
+      renderAll();
+      if(statusEl) statusEl.textContent=`✅ Limiet opgeslagen: ${limit}`;
+      setTimeout(()=>{if(statusEl)statusEl.textContent='';},3000);
+      toast(`⚔️ Uitdagingen-limiet: ${limit}`);
+    }catch(e){toast('❌ '+e.message);}
   });
 }
 
