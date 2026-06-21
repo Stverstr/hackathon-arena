@@ -1601,7 +1601,7 @@ document.getElementById('newGameBtn').addEventListener('click',()=>{
 document.getElementById('loginConfirm').addEventListener('click',doLogin);
 document.getElementById('loginCancel').addEventListener('click',closeLoginModal);
 document.getElementById('loginPwd').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();if(e.key==='Escape')closeLoginModal();});
-document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPwd').focus();if(e.key==='Escape')closeLoginModal();});
+
 document.getElementById('loginOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('loginOverlay'))closeLoginModal();});
 
 // EE overlay
