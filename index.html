@@ -286,8 +286,7 @@ select:focus{border-color:var(--teal);outline:none;}
   <div id="loginBox">
     <div class="lock-icon">🔐</div>
     <h2>Jury Login</h2>
-    <p>Log in als jury om acties uit te voeren.</p>
-    <input class="login-input" type="text" id="loginUser" placeholder="Gebruikersnaam" autocomplete="username">
+    <p>Vul het jury-wachtwoord in.</p>
     <input class="login-input" type="password" id="loginPwd" placeholder="Wachtwoord" autocomplete="current-password">
     <div id="loginErr"></div>
     <div class="pw-btns">
@@ -672,11 +671,10 @@ function requireJury(cb) {
 }
 
 function openLoginModal() {
-  document.getElementById('loginUser').value='';
   document.getElementById('loginPwd').value='';
   document.getElementById('loginErr').textContent='';
   document.getElementById('loginOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('loginUser').focus(),50);
+  setTimeout(()=>document.getElementById('loginPwd').focus(),50);
 }
 
 function closeLoginModal() {
@@ -685,19 +683,18 @@ function closeLoginModal() {
 }
 
 async function doLogin() {
-  const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPwd').value;
-  if (!u||!p) { document.getElementById('loginErr').textContent='❌ Vul beide velden in.'; return; }
+  if (!p) { document.getElementById('loginErr').textContent='❌ Vul het wachtwoord in.'; return; }
   const btn = document.getElementById('loginConfirm');
   btn.disabled=true; btn.textContent='Even wachten…';
   try {
-    const res = await fetch(`${FN}/jury-login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const res = await fetch(`${FN}/jury-login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});
     const data = await res.json();
     if (!res.ok) { document.getElementById('loginErr').textContent='❌ '+(data.error||'Fout'); return; }
     session = {session_id:data.session_id, username:data.username};
     const cb = pendingCb;
     closeLoginModal();
-    toast(`Welkom ${data.username}! 🔓`);
+    toast(`Jury ingelogd 🔓`);
     renderAll();
     if (cb) cb();
   } catch { document.getElementById('loginErr').textContent='❌ Verbindingsfout.'; }
